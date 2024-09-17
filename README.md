@@ -1,0 +1,1 @@
+This is a machine learning library developed by Adam Blakeslee for CS6350 at the University of Utah.
