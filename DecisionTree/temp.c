@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#define NUM_LABELS 2
 #define NUM_ATTRIBUTES 4
 int numValues[NUM_ATTRIBUTES] = {3, 3, 3, 2};
 #define MAX_VAL 3 
@@ -29,6 +30,7 @@ typedef struct
     int parent;     //The ID of the parent branch
     int leaf[MAX_VAL];    //The IDs of the leaves of this branch
     int attribute;  //The attribute this branch is split on (if any)
+    int value;      //The value a leaf represents when split from parent branch
     int label;      //The label for this branch (-1 no label, -2 all children labelled)
 }Branch;
 
@@ -72,6 +74,7 @@ int main()
         for (int j = 0; j < MAX_VAL; j++)
             tree[i].leaf[j] = -1;
         tree[i].attribute = -1;
+        tree[i].value = -1;
         tree[i].label = -1;
     }
 /* dumb stuff probably just delete
@@ -99,11 +102,41 @@ int main()
         int lastLabel = -1;
         bool readyToLabel = true;
         bool allLeavesLabelled = true;
-
-        if (currentLevel > maxDepth)
+        bool hasLeaves = false;
+        int labelCount[NUM_LABELS];
+        for (int i = 0; i < NUM_LABELS; i++)
         {
-            //Assign all branches on current level a label based on most common
-            //allDone = true;
+            labelCount[i] = 0;
+        }
+        int maxLabelCount = 0;
+        int maxLabel = -1;
+
+        //If current branch/leaf is at max level
+        if (tree[branchIndex].level > maxDepth)
+        {
+            //find most common label overall
+            for (int i = 0; i < numInstances; i++)
+            {
+                for (int j = 0; j < NUM_LABELS; j++)
+                {
+                    if (data[i][NUM_ATTRIBUTES] == j)
+                    {
+                        labelCount[j]++;
+                    }
+                }
+            }
+            for (int i = 0; i < NUM_LABELS; i++)
+            {
+                if (labelCount[i] > maxLabelCount)
+                {
+                    maxLabelCount = labelCount[i];
+                    maxLabel = i;
+                }
+            }
+            //Assign most common label to leaf
+            tree[branchIndex].label = maxLabel;
+            //set index to parent
+            branchIndex = tree[branchIndex].parent;
         }
         else
         {
@@ -160,12 +193,82 @@ int main()
                 //Set index back to head if all labelled
                 if (allLeavesLabelled)
                 {
+                    tree[tree[branchIndex].parent].label = -2;  //mark parent as having all leaves labelled
                     branchIndex = tree[branchIndex].parent;
                 }
             }   
             else //branch is not ready to label
             {
-                
+                //Check if leaves exist on this branch
+                for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
+                {
+                    if (tree[branchIndex].leaf[i != -1])
+                        {
+                            hasLeaves = true;
+                            break;
+                        }
+                }
+                if (hasLeaves)
+                {
+                    //Check if all leaves are labelled
+                    for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
+                    {
+                        //if all are not labelled, set index to next unlabeleld
+                        if (tree[tree[branchIndex].leaf[i]].label == -1)
+                        {
+                            allLeavesLabelled = false;
+                            branchIndex = tree[branchIndex].leaf[i];
+                            break;
+                        }
+                    }
+                    if (allLeavesLabelled)
+                    {
+                        //if all leaves on all branches under head are labelled, done
+                        if (branchIndex == 0)
+                        {
+                            allDone = true;
+                        }
+                        else // set index back to parent
+                        {
+                            branchIndex = tree[branchIndex].parent;
+                        }
+                    }
+                }
+                else //no leaves, not ready to label, need to split
+                {
+                    //If not on the head
+                    if (branchIndex != 0)
+                    {
+                        //set new subset of current instances
+                        for (int i = 0; i < numInstances; i++)
+                        {
+                            //the new instance space should be the 
+                            //instances where the value of the attribute of the 
+                            //parent matches the index of the leaf that the current branch is on the parent
+                            if (data[i][tree[branchIndex].attribute] == tree[branchIndex].value])
+                            {
+                                currentInstances[i] = i;
+                            }
+                            else
+                            {
+                                currentInstances[i] = -1;
+                            }
+                        }
+                    }
+                    //split
+                    tree[branchIndex].attribute = splitLeaf(currentInstances, data, numInstances, method);
+                    //create leaves & assign values
+                    for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
+                    {
+                        tree[branchIndex].leaf[i] = getNextID();
+                        tree[tree[branchIndex].leaf[i]].active = true;
+                        tree[tree[branchIndex].leaf[i]].value = i;
+                        tree[tree[branchIndex].leaf[i]].parent = branchIndex;
+                        tree[tree[branchIndex].leaf[i]].level = tree[branchIndex].level + 1;
+                    }
+                    //set branch index to first leaf
+                    branchIndex = tree[branchIndex].leaf[0];
+                }
             }
         }
     }
@@ -182,6 +285,7 @@ int main()
                 label -
                 set branch index to parent (if not head) -
                 if all leaves are labelled
+                    set parent as all leaves labelled
                     set branch index back to parent (if not head)
                 else
                     set branch index to next unlabelled leaf
@@ -201,31 +305,6 @@ int main()
                     set branch index to first leaf
     */  
 
-    tree[0].attribute = splitLeaf(currentInstances, data, numInstances, method);
-
-    //Flags to check if each value exists for the chosen attribute
-    bool valueExists[MAX_VAL];
-    
-    //Initialize all flags to false
-    for (int i = 0; i < MAX_VAL; i++)
-        valueExists[i] = false;
-
-    //Check every instance at selected attribute to check for value existence
-    for (int i = 0; i < numInstances; i++)
-    {
-        for (int j = 0; j < numValues[tree[branchIndex].attribute]; j++)
-        {
-            if (data[i][tree[branchIndex].attribute] == j)
-                {
-                    valueExists[j] = true;
-                    tree[branchIndex].leaf[j] = branchIndex + j;
-                    tree[branchIndex+j+1].parent = branchIndex;
-                    tree[branchIndex+j+1].active = true;
-                    tree[branchIndex+j+1].level = tree[branchIndex].level+1;
-                    break;
-                }
-        }
-    }
     
     for (int i = 0; i < 10; i++)
     {
