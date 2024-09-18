@@ -92,13 +92,54 @@ int main()
 
     while(!allDone)
     {
+        int lastLabel = -1;
+        bool readyToLabel = true;
+        bool allLeavesLabelled = true;
+
         if (currentLevel > maxDepth)
         {
-            
+            //Assign all branches on current level a label based on most common
+            //allDone = true;
         }
         else
         {
+            //Check if all instances have same label, label branch
+            for (int i = 0; i < numInstances; i++)
+            {
+                if (currentInstances[i] != -1)
+                {
+                    if (lastLabel == -1)
+                    {
+                        lastLabel = data[i][NUM_ATTRIBUTES];
+                    }
+                    else
+                    {
+                        if (lastLabel != data[i][NUM_ATTRIBUTES])
+                        {
+                            readyToLabel = false;
+                        }
+                        else
+                        {
+                            lastLabel = data[i][NUM_ATTRIBUTES]
+                        }
+                        if (readyToLabel)
+                        {
+                            tree[branchIndex].label = lastLabel;
+                            if (branchIndex == 0)
+                            {
+                                allDone = true;
+                            }
+                            else
+                            {
+                                branchIndex = tree[branchIndex].parent;       
+                            }
+                            for (int j = 0; j < tree[branchIndex].)                 
+                        }   
+                    }
+                }
 
+
+            }
         }
     }
     /*
@@ -109,9 +150,9 @@ int main()
             assign all branches on current level a label based on most common
             done
         else
-            if ready to label
-                label
-                set branch index to parent
+            if ready to label 
+                label -
+                set branch index to parent (if not head) -
                 if all leaves are labelled
                     set branch index back to parent (if not head)
                 else
