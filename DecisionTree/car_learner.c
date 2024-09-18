@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
+
+#define NUM_ATTRIBUTES 4
+#define NUM_VALUES 3
+
+int numInstances = 0;   //Number of instances in dataset
 
 /*
 | label values
@@ -41,37 +47,120 @@ wind:           strong, weak                0,1
 outlook,temperature,humidity,wind,play 
 */
 
-struct instance {
-    /*int buying;
+/*struct instance {
+    int buying;
     int maint;
     int doors;
     int persons;
     int lug_boot;
     int safety;
-    int label;*/
+    int label;
     int outlook;
     int temperature;
     int humidity;
     int wind;
     int play;
-};
+};*/
 
+//Calculate entropy on labels for current set of instances
+float ig_initial(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1])
+{
+    float totalCount = 0;
+    float yesCount = 0;
+    float noCount = 0;
+    for (int i = 0; i < numInstances; i++)
+    {
+        if (subset[i] != -1)
+        {
+            totalCount++;
+            if (dataset[i][NUM_ATTRIBUTES] == 1)
+                yesCount++;
+            else
+                noCount++;
+        }
+    }
+
+    return -(yesCount/totalCount)*log2(yesCount/totalCount)-(noCount/totalCount)*log2(noCount/totalCount);
+}
+
+//Calculate weighted entropy gain for each attribute in current instance set
+float ig_gain(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1], int attribute)
+{
+    float totalCount = 0;
+    float valueCount[NUM_VALUES];
+    float yesCount[NUM_VALUES];
+    float noCount[NUM_VALUES];
+    float entropy[NUM_VALUES];
+    float weightedEntropy = 0;
+
+    for (int j = 0; j < NUM_VALUES; j++)
+    {
+        valueCount[j] = 0;
+        yesCount[j] = 0;
+        noCount[j] = 0;
+        entropy[j] = 0;
+    }
+
+    //printf("vc[0]: %f, vc[1]: %f, vc[2]: %f\n", valueCount[0], valueCount[1], valueCount[2]);
+
+    for (int i = 0; i < numInstances; i++)
+    {
+        if (subset[i] != -1)
+        {
+            for (int j = 0; j < NUM_VALUES; j++)
+            {
+                //printf("inst: %d, attr: %d, val: %d, j: %d\t", i, attribute, dataset[i][attribute], j);
+                if (dataset[i][attribute] == j)
+                {
+                    //printf("incrementing vc[%d]\n",j);
+                    valueCount[j]++;
+                    totalCount++;
+                    if (dataset[i][NUM_ATTRIBUTES] == 1)
+                        yesCount[j]++;
+                    else
+                        noCount[j]++;
+                }
+                //else
+                    //printf("\n");            
+            }
+        }
+    }
+    
+    for (int j = 0; j < NUM_VALUES; j++)
+    {
+        //printf("val: %d, vc: %f, yc: %f, nc: %f\n", j, valueCount[j], yesCount[j], noCount[j]);
+        if (yesCount[j] == 0 || noCount[j] == 0)
+            entropy[j] = 0;
+        else
+            entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
+        //printf("ent: %f\n", entropy[j]);
+        weightedEntropy += valueCount[j]/totalCount*entropy[j];
+    }
+
+    //printf("went: %f\n",weightedEntropy);
+
+    return weightedEntropy;
+    //for each attribute
+        //for each value of that attribute
+            //calculate intermediate for all values
+        //calculate weighted attribute value
+}
+
+//Convert attribute strings from input dataset to integers
 int attributeToInt(char* attribute)
 {
-    if (!strcmp(attribute, "sunny") || !strcmp(attribute, "hot") || !strcmp(attribute, "high") || !strcmp(attribute, "strong") || !strcmp(attribute, "yes"))
+    if (!strcmp(attribute, "sunny") || !strcmp(attribute, "hot") || !strcmp(attribute, "high") || !strcmp(attribute, "strong") || !strcmp(attribute, "no"))
         return 0;
-    else if (!strcmp(attribute, "overcast") || !strcmp(attribute, "medium") || !strcmp(attribute, "normal") || !strcmp(attribute, "weak") || !strcmp(attribute, "no"))
+    else if (!strcmp(attribute, "overcast") || !strcmp(attribute, "medium") || !strcmp(attribute, "normal") || !strcmp(attribute, "weak") || !strcmp(attribute, "yes"))
         return 1;
-    else if (!strcmp(attribute, "rainy") || !strcmp(attribute, "cold") || !strcmp(attribute, "low"))
+    else if (!strcmp(attribute, "rainy") || !strcmp(attribute, "cool") || !strcmp(attribute, "low"))
         return 2;
     else
         return -1;
 }
 
 int main()
-{
-    int numInstances = 0;   //Number of instances in dataset
-    
+{   
     //Open input file
     FILE *inputFile = fopen("tennis.csv", "r");
     if (inputFile == NULL)
@@ -92,14 +181,27 @@ int main()
     rewind(inputFile);
     
     //Create array of instance structs
-    struct instance data[numInstances];
-    //int data[numInstances][5];
+    //struct instance data[numInstances];
+    int data[numInstances][NUM_ATTRIBUTES+1];
     /*
-        data[0] - outlook
-        data[1] - temperature
-        data[2] - humidity
-        data[3] - wind
-        data[4] - play
+        data[inst][0] - outlook
+            sunny - 0
+            overcast - 1
+            rainy - 2
+        data[]inst[1] - temperature
+            hot - 0
+            medium - 1
+            cool - 2
+        data[inst][2] - humidity
+            high - 0
+            normal - 1
+            low - 2
+        data[inst][3] - wind
+            strong - 0
+            weak - 1
+        data[inst][4] - play
+            no - 0
+            yes - 1
     */
     int dataIndex = 0;
 
@@ -108,15 +210,11 @@ int main()
     {
         fgets(row, 50, inputFile);
         token = strtok(row, ",");
-        data[dataIndex].outlook = attributeToInt(token);
-        token = strtok(NULL, ",");
-        data[dataIndex].temperature = attributeToInt(token);
-        token = strtok(NULL, ",");
-        data[dataIndex].humidity = attributeToInt(token);
-        token = strtok(NULL, ",");
-        data[dataIndex].wind = attributeToInt(token);
-        token = strtok(NULL, ",\r\n");
-        data[dataIndex].play = attributeToInt(token);
+        for (int i = 0; i < NUM_ATTRIBUTES+1; i++)
+        {
+            data[dataIndex][i] = attributeToInt(token);
+            token = strtok(NULL, ",\r\n");
+        }
         dataIndex++;
     }
 
@@ -153,7 +251,7 @@ int main()
     } while (!userInputValid);
 
     //Ask user for max depth
-    int depth;
+    int maxDepth;
     do 
     {
         printf("Select maximum tree depth (1-6)\n\n");
@@ -162,7 +260,7 @@ int main()
         if (userInput >= '1' && userInput <= '6')
         {
             userInputValid = true;
-            depth = userInput-48;
+            maxDepth = userInput-48;
         }
         else
         {
@@ -172,5 +270,128 @@ int main()
     } while (!userInputValid);
 
     //Run algorithm to construct tree
-    
+
+    //Initialize instance sets
+    int currentInstances[maxDepth][numInstances];  //This tracks the subset of instances at each evaluation
+    for (int i = 0; i < maxDepth; i++)
+    {
+        for (int j = 0; j < numInstances; j++)
+        {
+            if (i == 0)
+                currentInstances[i][j] = j;
+            else
+                currentInstances[i][j] = -1;
+        }
+    }
+
+    currentInstances[1][0] = 0;
+    currentInstances[1][1] = 1;
+    currentInstances[1][7] = 7;
+    currentInstances[1][8] = 8;
+    currentInstances[1][10] = 10;
+
+    //In some set of instances which starts as all
+        //Find original rating of labels
+        //for each attribute
+            //for each value of that attribute
+                //calculate intermediate for all values
+            //calculate weighted attribute value
+        //determine which attribute is best to split
+        //track which attribute was split on
+        //determine subset of instances for each leaf of attribute split
+        //if they all have same label, next leaf
+            //if all leaves are one label, next waiting attribute split
+        //repeat
+
+    //Main algorithm loop
+    int currentDepth = 0;
+    float initialInformation;
+    float attributeGain[4];
+    float bestGain;
+    int bestAttribute;
+    int numLeaves[maxDepth];
+
+    do
+    {
+        //Reset best gain and best attribute
+        bestGain = -1;
+        bestAttribute = -1;
+
+        //Calculate initial label information
+        switch (method)
+        {
+            //IG
+            case 0:
+                initialInformation = ig_initial(currentInstances[currentDepth], data);
+                printf("INITINF: %f\n", initialInformation);
+                break;
+            //ME
+            case 1:
+                //initialInformation = me_initial(currentInstances[currentDepth], data);
+                break;
+            //Gini
+            case 2:
+                //initialInformation = gini_initial(currentInstances[currentDepth], data);
+                break;
+        }
+
+        //Calculate gain of splitting on each attribute
+        for (int i = 0; i < NUM_ATTRIBUTES; i++)
+        {
+            switch (method)
+            {
+            //IG
+            case 0:
+                attributeGain[i] = ig_gain(currentInstances[currentDepth], data, i);
+                break;
+            //ME
+            case 1:
+                //attributeGain[i] = me_gain(currentInstances[currentDepth], data);
+                break;
+            //Gini
+            case 2:
+                //attributeGain[i] = gini_gain(currentInstances[currentDepth], data);
+                break;
+            }
+        }
+
+        //Find max gain attribute
+        for (int i = 0; i < NUM_ATTRIBUTES; i++)
+        {
+            printf("gain: %f\n", initialInformation-attributeGain[i]);
+            if (initialInformation - attributeGain[i] > bestGain)
+            {
+                bestGain = initialInformation - attributeGain[i];
+                bestAttribute = i;
+            }
+        }
+
+        printf("Splitting on attribute: %d\n", bestAttribute);
+
+
+        //Check for other splits to decide on this level
+        if (currentDepth != 0)
+        {
+            
+        }
+
+        currentDepth++;
+    } while (currentDepth < maxDepth);
+
+
+
+//THIS WILL PRINT THE READ IN DATASET CONVERTED TO INTEGERS
+    /*
+    for (int i = 0; i < numInstances; i++)
+    {
+        printf("%d: ", i);
+        for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
+            printf("%d, ", data[i][j]);
+        printf("\n");
+    }
+    */
+
 }
+
+
+
