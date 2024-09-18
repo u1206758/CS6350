@@ -7,7 +7,8 @@
 #include <math.h>
 
 #define NUM_ATTRIBUTES 4
-#define NUM_VALUES 3
+int numValues[NUM_ATTRIBUTES] = {3, 3, 3, 2};
+#define MAX_VAL 3 
 
 int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method);
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
@@ -25,7 +26,7 @@ struct Branch
     bool active;    //Whether this branch slot is used by the tree
     int level;      //The depth in the tree this branch is on
     int parent;     //The ID of the parent branch
-    int leaf[NUM_VALUES];    //The IDs of the leaves of this branch
+    int leaf[MAX_VAL];    //The IDs of the leaves of this branch
     int attribute;  //The attribute this branch is split on (if any)
     int label;      //The label for this branch (-1 no label, -2 all children labelled)
 };
@@ -53,16 +54,18 @@ int main()
     int maxDepth = 6;
     int method = 0;
 
-    int maxBranches = (int)pow(NUM_VALUES, maxDepth);
+    int maxBranches = (int)pow(MAX_VAL, maxDepth);
     struct Branch tree[maxBranches];
     int currentLevel = 1;
+    bool allDone = false;
+
     //Initialize all possible branches
     for (int i = 0; i < maxBranches; i++)
     {
         tree[i].active = false;
         tree[i].level = -1;
         tree[i].parent = -1;
-        for (int j = 0; j < NUM_VALUES; j++)
+        for (int j = 0; j < MAX_VAL; j++)
             tree[i].leaf[j] = -1;
         tree[i].attribute = -1;
         tree[i].label = -1;
@@ -87,7 +90,17 @@ int main()
     tree[0].active = true;
     tree[0].level = 1;
 
+    while(!allDone)
+    {
+        if (currentLevel > maxDepth)
+        {
+            
+        }
+        else
+        {
 
+        }
+    }
     /*
     start at branch 0
     
@@ -122,16 +135,16 @@ int main()
     tree[0].attribute = splitLeaf(currentInstances, data, numInstances, method);
 
     //Flags to check if each value exists for the chosen attribute
-    bool valueExists[NUM_VALUES];
+    bool valueExists[MAX_VAL];
     
     //Initialize all flags to false
-    for (int i = 0; i < NUM_VALUES; i++)
+    for (int i = 0; i < MAX_VAL; i++)
         valueExists[i] = false;
 
     //Check every instance at selected attribute to check for value existence
     for (int i = 0; i < numInstances; i++)
     {
-        for (int j = 0; j < NUM_VALUES; j++)
+        for (int j = 0; j < numValues[tree[branchIndex].attribute]; j++)
         {
             if (data[i][tree[branchIndex].attribute] == j)
                 {
@@ -147,7 +160,7 @@ int main()
     
     for (int i = 0; i < 10; i++)
     {
-        printf("branch[%d] - active: %d, parent: %d, level: %d\n", i, tree[i].active, tree[i].parent, tree[i].level);
+        printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute);
     }
 
     //printf("%d  %d  %d\n", valueExists[0], valueExists[1], valueExists[2]);
@@ -239,13 +252,13 @@ float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances
 float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
 {
     float totalCount = 0;
-    float valueCount[NUM_VALUES];
-    float yesCount[NUM_VALUES];
-    float noCount[NUM_VALUES];
-    float entropy[NUM_VALUES];
+    float valueCount[numValues[attribute]];
+    float yesCount[numValues[attribute]];
+    float noCount[numValues[attribute]];
+    float entropy[numValues[attribute]];
     float weightedEntropy = 0;
 
-    for (int j = 0; j < NUM_VALUES; j++)
+    for (int j = 0; j < numValues[attribute]; j++)
     {
         valueCount[j] = 0;
         yesCount[j] = 0;
@@ -257,7 +270,7 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
     {
         if (subset[i] != -1)
         {
-            for (int j = 0; j < NUM_VALUES; j++)
+            for (int j = 0; j < numValues[attribute]; j++)
             {
                 if (dataset[i][attribute] == j)
                 {
@@ -272,7 +285,7 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
         }
     }
     
-    for (int j = 0; j < NUM_VALUES; j++)
+    for (int j = 0; j < numValues[attribute]; j++)
     {
         if (yesCount[j] == 0 || noCount[j] == 0)
             entropy[j] = 0;
