@@ -7,157 +7,27 @@
 #include <math.h>
 
 #define NUM_ATTRIBUTES 4
-#define NUM_VALUES 3
 
 int numInstances = 0;   //Number of instances in dataset
+int numValues[4] = {3, 3, 3, 2};  //Number of values per attribute
+int method;
 
-/*
-| label values
+int splitLeaf(int currentInstances[numInstances], int data[numInstances][NUM_ATTRIBUTES+1]);
+float ig_initial(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1]);
+float ig_gain(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1], int attribute);
+int attributeToInt(char* attribute);
 
-unacc, acc, good, vgood             0,1,2,3
-
-| attributes
-
-buying:   vhigh, high, med, low.    0,1,2,3
-maint:    vhigh, high, med, low.    0,1,2,3
-doors:    2, 3, 4, 5more.           0,1,2,3
-persons:  2, 4, more.               0,1,2
-lug_boot: small, med, big.          0,1,2
-safety:   low, med, high.           0,1,2
-
-| columns
-buying,maint,doors,persons,lug_boot,safety,label
-
-*/
-
-
-/* 
-   | label values
-
-    yes no             0,1
-
-| attributes
-
-outlook:        sunny, overcast, rainy      0,1,2
-temperature:    hot, medium, cool           0,1,2
-humidity:       high, normal, low           0,1,2
-wind:           strong, weak                0,1
-
-| columns
-outlook,temperature,humidity,wind,play 
-*/
-
-/*struct instance {
-    int buying;
-    int maint;
-    int doors;
-    int persons;
-    int lug_boot;
-    int safety;
+struct Branch
+{
+    int attribute;
+    struct Branch *parent;
+    int numLeaves;
+    struct Branch *leaf[3];
+    int totalCount;
+    int yesCount;
+    int noCount;
     int label;
-    int outlook;
-    int temperature;
-    int humidity;
-    int wind;
-    int play;
-};*/
-
-//Calculate entropy on labels for current set of instances
-float ig_initial(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1])
-{
-    float totalCount = 0;
-    float yesCount = 0;
-    float noCount = 0;
-    for (int i = 0; i < numInstances; i++)
-    {
-        if (subset[i] != -1)
-        {
-            totalCount++;
-            if (dataset[i][NUM_ATTRIBUTES] == 1)
-                yesCount++;
-            else
-                noCount++;
-        }
-    }
-
-    return -(yesCount/totalCount)*log2(yesCount/totalCount)-(noCount/totalCount)*log2(noCount/totalCount);
-}
-
-//Calculate weighted entropy gain for each attribute in current instance set
-float ig_gain(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1], int attribute)
-{
-    float totalCount = 0;
-    float valueCount[NUM_VALUES];
-    float yesCount[NUM_VALUES];
-    float noCount[NUM_VALUES];
-    float entropy[NUM_VALUES];
-    float weightedEntropy = 0;
-
-    for (int j = 0; j < NUM_VALUES; j++)
-    {
-        valueCount[j] = 0;
-        yesCount[j] = 0;
-        noCount[j] = 0;
-        entropy[j] = 0;
-    }
-
-    //printf("vc[0]: %f, vc[1]: %f, vc[2]: %f\n", valueCount[0], valueCount[1], valueCount[2]);
-
-    for (int i = 0; i < numInstances; i++)
-    {
-        if (subset[i] != -1)
-        {
-            for (int j = 0; j < NUM_VALUES; j++)
-            {
-                //printf("inst: %d, attr: %d, val: %d, j: %d\t", i, attribute, dataset[i][attribute], j);
-                if (dataset[i][attribute] == j)
-                {
-                    //printf("incrementing vc[%d]\n",j);
-                    valueCount[j]++;
-                    totalCount++;
-                    if (dataset[i][NUM_ATTRIBUTES] == 1)
-                        yesCount[j]++;
-                    else
-                        noCount[j]++;
-                }
-                //else
-                    //printf("\n");            
-            }
-        }
-    }
-    
-    for (int j = 0; j < NUM_VALUES; j++)
-    {
-        //printf("val: %d, vc: %f, yc: %f, nc: %f\n", j, valueCount[j], yesCount[j], noCount[j]);
-        if (yesCount[j] == 0 || noCount[j] == 0)
-            entropy[j] = 0;
-        else
-            entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
-        //printf("ent: %f\n", entropy[j]);
-        weightedEntropy += valueCount[j]/totalCount*entropy[j];
-    }
-
-    //printf("went: %f\n",weightedEntropy);
-
-    return weightedEntropy;
-    //for each attribute
-        //for each value of that attribute
-            //calculate intermediate for all values
-        //calculate weighted attribute value
-}
-
-//Convert attribute strings from input dataset to integers
-int attributeToInt(char* attribute)
-{
-    if (!strcmp(attribute, "sunny") || !strcmp(attribute, "hot") || !strcmp(attribute, "high") || !strcmp(attribute, "strong") || !strcmp(attribute, "no"))
-        return 0;
-    else if (!strcmp(attribute, "overcast") || !strcmp(attribute, "medium") || !strcmp(attribute, "normal") || !strcmp(attribute, "weak") || !strcmp(attribute, "yes"))
-        return 1;
-    else if (!strcmp(attribute, "rainy") || !strcmp(attribute, "cool") || !strcmp(attribute, "low"))
-        return 2;
-    else
-        return -1;
-}
+};
 
 int main()
 {   
@@ -224,7 +94,7 @@ int main()
     //Ask user for method
     char userInput;
     bool userInputValid;
-    int method;
+    //int method;
     do 
     {
         printf("Select attribute split method:\n\tInformation gain (I)\n\tMajority error (M)\n\tGini index (G)\n\n");
@@ -272,23 +142,12 @@ int main()
     //Run algorithm to construct tree
 
     //Initialize instance sets
-    int currentInstances[maxDepth][numInstances];  //This tracks the subset of instances at each evaluation
-    for (int i = 0; i < maxDepth; i++)
+    int currentInstances[numInstances];  //This tracks the subset of instances at each evaluation
+    for (int i = 0; i < numInstances; i++)
     {
-        for (int j = 0; j < numInstances; j++)
-        {
-            if (i == 0)
-                currentInstances[i][j] = j;
-            else
-                currentInstances[i][j] = -1;
-        }
+        currentInstances[i] = i;
     }
 
-    currentInstances[1][0] = 0;
-    currentInstances[1][1] = 1;
-    currentInstances[1][7] = 7;
-    currentInstances[1][8] = 8;
-    currentInstances[1][10] = 10;
 
     //In some set of instances which starts as all
         //Find original rating of labels
@@ -303,16 +162,118 @@ int main()
             //if all leaves are one label, next waiting attribute split
         //repeat
 
+    
+
+
+
+//THIS WILL PRINT THE READ IN DATASET CONVERTED TO INTEGERS
+    /*
+    for (int i = 0; i < numInstances; i++)
+    {
+        printf("%d: ", i);
+        for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
+            printf("%d, ", data[i][j]);
+        printf("\n");
+    }
+    */
+
+}
+
+
+//Calculate entropy on labels for current set of instances
+float ig_initial(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1])
+{
+    float totalCount = 0;
+    float yesCount = 0;
+    float noCount = 0;
+    for (int i = 0; i < numInstances; i++)
+    {
+        if (subset[i] != -1)
+        {
+            totalCount++;
+            if (dataset[i][NUM_ATTRIBUTES] == 1)
+                yesCount++;
+            else
+                noCount++;
+        }
+    }
+
+    return -(yesCount/totalCount)*log2(yesCount/totalCount)-(noCount/totalCount)*log2(noCount/totalCount);
+}
+
+//Calculate weighted entropy gain for each attribute in current instance set
+float ig_gain(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1], int attribute)
+{
+    float totalCount = 0;
+    float valueCount[numValues[attribute]];
+    float yesCount[numValues[attribute]];
+    float noCount[numValues[attribute]];
+    float entropy[numValues[attribute]];
+    float weightedEntropy = 0;
+
+    for (int j = 0; j < numValues[attribute]; j++)
+    {
+        valueCount[j] = 0;
+        yesCount[j] = 0;
+        noCount[j] = 0;
+        entropy[j] = 0;
+    }
+
+    //printf("vc[0]: %f, vc[1]: %f, vc[2]: %f\n", valueCount[0], valueCount[1], valueCount[2]);
+
+    for (int i = 0; i < numInstances; i++)
+    {
+        if (subset[i] != -1)
+        {
+            for (int j = 0; j < numValues[attribute]; j++)
+            {
+                //printf("inst: %d, attr: %d, val: %d, j: %d\t", i, attribute, dataset[i][attribute], j);
+                if (dataset[i][attribute] == j)
+                {
+                    //printf("incrementing vc[%d]\n",j);
+                    valueCount[j]++;
+                    totalCount++;
+                    if (dataset[i][NUM_ATTRIBUTES] == 1)
+                        yesCount[j]++;
+                    else
+                        noCount[j]++;
+                }
+                //else
+                    //printf("\n");            
+            }
+        }
+    }
+    
+    for (int j = 0; j < numValues[attribute]; j++)
+    {
+        //printf("val: %d, vc: %f, yc: %f, nc: %f\n", j, valueCount[j], yesCount[j], noCount[j]);
+        if (yesCount[j] == 0 || noCount[j] == 0)
+            entropy[j] = 0;
+        else
+            entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
+        //printf("ent: %f\n", entropy[j]);
+        weightedEntropy += valueCount[j]/totalCount*entropy[j];
+    }
+
+    //printf("went: %f\n",weightedEntropy);
+
+    return weightedEntropy;
+    //for each attribute
+        //for each value of that attribute
+            //calculate intermediate for all values
+        //calculate weighted attribute value
+}
+
+int splitLeaf(int currentInstances[numInstances], int data[numInstances][NUM_ATTRIBUTES+1])
+{
     //Main algorithm loop
-    int currentDepth = 0;
     float initialInformation;
     float attributeGain[4];
     float bestGain;
     int bestAttribute;
-    int numLeaves[maxDepth];
 
-    do
-    {
+    //do
+    //{
         //Reset best gain and best attribute
         bestGain = -1;
         bestAttribute = -1;
@@ -322,7 +283,7 @@ int main()
         {
             //IG
             case 0:
-                initialInformation = ig_initial(currentInstances[currentDepth], data);
+                initialInformation = ig_initial(currentInstances, data);
                 printf("INITINF: %f\n", initialInformation);
                 break;
             //ME
@@ -342,7 +303,7 @@ int main()
             {
             //IG
             case 0:
-                attributeGain[i] = ig_gain(currentInstances[currentDepth], data, i);
+                attributeGain[i] = ig_gain(currentInstances, data, i);
                 break;
             //ME
             case 1:
@@ -367,31 +328,32 @@ int main()
         }
 
         printf("Splitting on attribute: %d\n", bestAttribute);
-
-
+        return bestAttribute;
+        //numLeaves[currentDepth] = numValues[bestAttribute];
+        //printf("leaves below: %d", numLeaves[currentDepth]);
         //Check for other splits to decide on this level
-        if (currentDepth != 0)
-        {
-            
-        }
+        //if (currentDepth == 0)
+        //    currentDepth++;
+        //else
+        //{
+        //    if (numLeavesSplit[currentDepth-1] == numLeaves[currentDepth-1])
+        //        currentDepth++;
+        //    else
 
-        currentDepth++;
-    } while (currentDepth < maxDepth);
-
-
-
-//THIS WILL PRINT THE READ IN DATASET CONVERTED TO INTEGERS
-    /*
-    for (int i = 0; i < numInstances; i++)
-    {
-        printf("%d: ", i);
-        for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
-            printf("%d, ", data[i][j]);
-        printf("\n");
-    }
-    */
+        //}
 
 }
 
-
+//Convert attribute strings from input dataset to integers
+int attributeToInt(char* attribute)
+{
+    if (!strcmp(attribute, "sunny") || !strcmp(attribute, "hot") || !strcmp(attribute, "high") || !strcmp(attribute, "strong") || !strcmp(attribute, "no"))
+        return 0;
+    else if (!strcmp(attribute, "overcast") || !strcmp(attribute, "medium") || !strcmp(attribute, "normal") || !strcmp(attribute, "weak") || !strcmp(attribute, "yes"))
+        return 1;
+    else if (!strcmp(attribute, "rainy") || !strcmp(attribute, "cool") || !strcmp(attribute, "low"))
+        return 2;
+    else
+        return -1;
+}
 
