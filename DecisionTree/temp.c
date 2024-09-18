@@ -21,15 +21,18 @@ int attributeToInt(char* attribute);
 int getMethod(void);
 int getMaxDepth(void);
 
-struct Branch
+typedef struct
 {
+   // int id;         //ID (also array index) of current branch
     bool active;    //Whether this branch slot is used by the tree
     int level;      //The depth in the tree this branch is on
     int parent;     //The ID of the parent branch
     int leaf[MAX_VAL];    //The IDs of the leaves of this branch
     int attribute;  //The attribute this branch is split on (if any)
     int label;      //The label for this branch (-1 no label, -2 all children labelled)
-};
+}Branch;
+
+int getNextID(Branch tree[], int maxBranches);
 
 int main()
 {
@@ -55,13 +58,14 @@ int main()
     int method = 0;
 
     int maxBranches = (int)pow(MAX_VAL, maxDepth);
-    struct Branch tree[maxBranches];
+    Branch tree[maxBranches];
     int currentLevel = 1;
     bool allDone = false;
 
     //Initialize all possible branches
     for (int i = 0; i < maxBranches; i++)
     {
+        //tree[i].id = i;
         tree[i].active = false;
         tree[i].level = -1;
         tree[i].parent = -1;
@@ -103,11 +107,13 @@ int main()
         }
         else
         {
-            //Check if all instances have same label, label branch
+            //Check if all instances have same label
             for (int i = 0; i < numInstances; i++)
-            {
+            {   
+                //If current instance is in current set
                 if (currentInstances[i] != -1)
                 {
+                    //Check if all labels are the same
                     if (lastLabel == -1)
                     {
                         lastLabel = data[i][NUM_ATTRIBUTES];
@@ -117,31 +123,53 @@ int main()
                         if (lastLabel != data[i][NUM_ATTRIBUTES])
                         {
                             readyToLabel = false;
+                            break;
                         }
                         else
                         {
-                            lastLabel = data[i][NUM_ATTRIBUTES]
+                            lastLabel = data[i][NUM_ATTRIBUTES];
                         }
-                        if (readyToLabel)
-                        {
-                            tree[branchIndex].label = lastLabel;
-                            if (branchIndex == 0)
-                            {
-                                allDone = true;
-                            }
-                            else
-                            {
-                                branchIndex = tree[branchIndex].parent;       
-                            }
-                            for (int j = 0; j < tree[branchIndex].)                 
-                        }   
                     }
                 }
-
-
+            }
+            //If branch is ready to label
+            if (readyToLabel)
+            {
+                //Label branch
+                tree[branchIndex].label = lastLabel;
+                //If index at head, all done, else set index to parent
+                if (branchIndex == 0)
+                {
+                    allDone = true;
+                }
+                else
+                {
+                    branchIndex = tree[branchIndex].parent;       
+                }
+                //Check if all leaves of current branch are labelled
+                for (int j = 0; j < numValues[tree[branchIndex].attribute]; j++)
+                {
+                    //If not, set index to next unlabelled leaf
+                    if (tree[tree[branchIndex].leaf[j]].label == -1)
+                    {
+                        allLeavesLabelled = false;
+                        branchIndex = tree[branchIndex].leaf[j];
+                        break;
+                    }
+                }                 
+                //Set index back to head if all labelled
+                if (allLeavesLabelled)
+                {
+                    branchIndex = tree[branchIndex].parent;
+                }
+            }   
+            else //branch is not ready to label
+            {
+                
             }
         }
     }
+
     /*
     start at branch 0
     
@@ -480,4 +508,14 @@ int getMaxDepth(void)
         }
     } while (!userInputValid);
     return depth;
+}
+
+int getNextID(Branch tree[], int maxBranches)
+{
+    for (int i = 0; i < maxBranches; i++)
+    {
+        if (tree[i].active == false)
+            return i;
+    }
+    return -1;
 }
