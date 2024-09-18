@@ -8,14 +8,19 @@
 
 #define NUM_ATTRIBUTES 4
 
+//Global variables
 int numInstances = 0;   //Number of instances in dataset
 int numValues[4] = {3, 3, 3, 2};  //Number of values per attribute
-int method;
 
-int splitLeaf(int currentInstances[numInstances], int data[numInstances][NUM_ATTRIBUTES+1]);
+int splitLeaf(int currentInstances[numInstances], int data[numInstances][NUM_ATTRIBUTES+1], int method);
 float ig_initial(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1]);
 float ig_gain(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES+1], int attribute);
+
+int countData(void);
+int importData(int data[numInstances][NUM_ATTRIBUTES+1]);
 int attributeToInt(char* attribute);
+int getMethod(void);
+int getMaxDepth(void);
 
 struct Branch
 {
@@ -31,122 +36,60 @@ struct Branch
 
 int main()
 {   
-    //Open input file
-    FILE *inputFile = fopen("tennis.csv", "r");
-    if (inputFile == NULL)
-    {
-        printf("Error opening file");
+    int method;
+    int maxDepth;
+    //Import data from CSV
+    numInstances = countData();
+    if (numInstances == -1)
         return 1;
-    }
-
-    char row[50];
-    char *token;
-
-    //Count number of instances in input file
-    while (feof(inputFile) != true)
-    {
-        fgets(row, 50, inputFile);
-        numInstances++;
-    }
-    rewind(inputFile);
-    
-    //Create array of instance structs
-    //struct instance data[numInstances];
     int data[numInstances][NUM_ATTRIBUTES+1];
-    /*
-        data[inst][0] - outlook
-            sunny - 0
-            overcast - 1
-            rainy - 2
-        data[]inst[1] - temperature
-            hot - 0
-            medium - 1
-            cool - 2
-        data[inst][2] - humidity
-            high - 0
-            normal - 1
-            low - 2
-        data[inst][3] - wind
-            strong - 0
-            weak - 1
-        data[inst][4] - play
-            no - 0
-            yes - 1
-    */
-    int dataIndex = 0;
-
-    //Parse input CSV into data instance struct array
-    while (feof(inputFile) != true)
-    {
-        fgets(row, 50, inputFile);
-        token = strtok(row, ",");
-        for (int i = 0; i < NUM_ATTRIBUTES+1; i++)
-        {
-            data[dataIndex][i] = attributeToInt(token);
-            token = strtok(NULL, ",\r\n");
-        }
-        dataIndex++;
-    }
-
-    fclose(inputFile);
-    dataIndex = 0;
+    if (importData(data) == -1)
+        return -1;
 
     //Ask user for method
-    char userInput;
-    bool userInputValid;
-    //int method;
-    do 
-    {
-        printf("Select attribute split method:\n\tInformation gain (I)\n\tMajority error (M)\n\tGini index (G)\n\n");
-        scanf("%s", &userInput);
-        printf("\n");
-        switch (userInput)
-        {
-            case 'I':
-                userInputValid = true;
-                method = 0;
-                break;
-            case 'M':
-                userInputValid = true;
-                method = 1;
-                break;
-            case 'G':
-                userInputValid = true;
-                method = 2;
-                break;
-            default:
-                printf("Invalid selection\n\n");
-                userInputValid = false;
-        }
-    } while (!userInputValid);
+    method = getMethod();
 
     //Ask user for max depth
-    int maxDepth;
-    do 
+    maxDepth = getMaxDepth();
+
+    //Initialize current instances to entire dataset
+    int currentInstances[numInstances];
+    for (int i = 0; i < numInstances; i++)
+        currentInstances[i] = 1;
+
+    //Start tree
+    struct Branch head;
+    head.parent = NULL;
+
+    //Check if all labels in current subset are the same
+    int lastValid = -1;
+    bool allSame = true;
+    for (int i = 0; i < numInstances-1; i++)
     {
-        printf("Select maximum tree depth (1-6)\n\n");
-        scanf("%s", &userInput);
-        printf("\n");
-        if (userInput >= '1' && userInput <= '6')
+        if (!allSame)
+            break;
+        //All instances in current subset have same label
+        if (currentInstances[i] != -1)
         {
-            userInputValid = true;
-            maxDepth = userInput-48;
+            if (lastValid == -1)
+                lastValid = i;
+            if (data[i][NUM_ATTRIBUTES] != data[lastValid][NUM_ATTRIBUTES])
+                allSame = false;
+            lastValid = i;
         }
-        else
-        {
-            printf("Invalid selection\n\n");
-            userInputValid = false;
-        }
-    } while (!userInputValid);
+    }
+
+    printf("same? %d\n", allSame);
+
+    head.attribute = splitLeaf(currentInstances, data, method);
+    head.numLeaves = numValues[head.attribute];
+
+    head.leaf[0]->parent = &head;
+    head.leaf[0] = new Branch leaf1;
 
     //Run algorithm to construct tree
 
     //Initialize instance sets
-    int currentInstances[numInstances];  //This tracks the subset of instances at each evaluation
-    for (int i = 0; i < numInstances; i++)
-    {
-        currentInstances[i] = i;
-    }
 
 
     //In some set of instances which starts as all
@@ -161,22 +104,7 @@ int main()
         //if they all have same label, next leaf
             //if all leaves are one label, next waiting attribute split
         //repeat
-
-    
-
-
-
-//THIS WILL PRINT THE READ IN DATASET CONVERTED TO INTEGERS
-    /*
-    for (int i = 0; i < numInstances; i++)
-    {
-        printf("%d: ", i);
-        for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
-            printf("%d, ", data[i][j]);
-        printf("\n");
-    }
-    */
-
+    return 0;
 }
 
 
@@ -219,18 +147,14 @@ float ig_gain(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES
         entropy[j] = 0;
     }
 
-    //printf("vc[0]: %f, vc[1]: %f, vc[2]: %f\n", valueCount[0], valueCount[1], valueCount[2]);
-
     for (int i = 0; i < numInstances; i++)
     {
         if (subset[i] != -1)
         {
             for (int j = 0; j < numValues[attribute]; j++)
             {
-                //printf("inst: %d, attr: %d, val: %d, j: %d\t", i, attribute, dataset[i][attribute], j);
                 if (dataset[i][attribute] == j)
                 {
-                    //printf("incrementing vc[%d]\n",j);
                     valueCount[j]++;
                     totalCount++;
                     if (dataset[i][NUM_ATTRIBUTES] == 1)
@@ -238,110 +162,154 @@ float ig_gain(int subset[numInstances], int dataset[numInstances][NUM_ATTRIBUTES
                     else
                         noCount[j]++;
                 }
-                //else
-                    //printf("\n");            
             }
         }
     }
     
     for (int j = 0; j < numValues[attribute]; j++)
     {
-        //printf("val: %d, vc: %f, yc: %f, nc: %f\n", j, valueCount[j], yesCount[j], noCount[j]);
         if (yesCount[j] == 0 || noCount[j] == 0)
             entropy[j] = 0;
         else
             entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
-        //printf("ent: %f\n", entropy[j]);
         weightedEntropy += valueCount[j]/totalCount*entropy[j];
     }
-
-    //printf("went: %f\n",weightedEntropy);
-
     return weightedEntropy;
-    //for each attribute
-        //for each value of that attribute
-            //calculate intermediate for all values
-        //calculate weighted attribute value
 }
 
-int splitLeaf(int currentInstances[numInstances], int data[numInstances][NUM_ATTRIBUTES+1])
+int splitLeaf(int currentInstances[numInstances], int data[numInstances][NUM_ATTRIBUTES+1], int method)
 {
     //Main algorithm loop
     float initialInformation;
     float attributeGain[4];
-    float bestGain;
-    int bestAttribute;
-
-    //do
-    //{
-        //Reset best gain and best attribute
-        bestGain = -1;
-        bestAttribute = -1;
-
-        //Calculate initial label information
+    float bestGain = -1;
+    int bestAttribute = -1;
+    
+    //Calculate initial label information
+    switch (method)
+    {
+        //IG
+        case 0:
+            initialInformation = ig_initial(currentInstances, data);
+            break;
+        //ME
+        case 1:
+            //initialInformation = me_initial(currentInstances[currentDepth], data);
+            break;
+        //Gini
+        case 2:
+            //initialInformation = gini_initial(currentInstances[currentDepth], data);
+            break;
+    }
+    
+    //Calculate gain of splitting on each attribute
+    for (int i = 0; i < NUM_ATTRIBUTES; i++)
+    {
         switch (method)
         {
-            //IG
-            case 0:
-                initialInformation = ig_initial(currentInstances, data);
-                printf("INITINF: %f\n", initialInformation);
-                break;
-            //ME
-            case 1:
-                //initialInformation = me_initial(currentInstances[currentDepth], data);
-                break;
-            //Gini
-            case 2:
-                //initialInformation = gini_initial(currentInstances[currentDepth], data);
-                break;
+        //IG
+        case 0:
+            attributeGain[i] = ig_gain(currentInstances, data, i);
+            break;
+        //ME
+        case 1:
+            //attributeGain[i] = me_gain(currentInstances[currentDepth], data);
+            break;
+        //Gini
+        case 2:
+            //attributeGain[i] = gini_gain(currentInstances[currentDepth], data);
+            break;
         }
-
-        //Calculate gain of splitting on each attribute
-        for (int i = 0; i < NUM_ATTRIBUTES; i++)
+    }
+    
+    //Find max gain attribute
+    for (int i = 0; i < NUM_ATTRIBUTES; i++)
+    {
+        if (initialInformation - attributeGain[i] > bestGain)
         {
-            switch (method)
+            bestGain = initialInformation - attributeGain[i];
+            bestAttribute = i;
+        }
+    }
+    return bestAttribute;
+}
+
+int countData(void)
+{
+     int count = 0;
+
+    //Open input file
+    FILE *inputFile = fopen("tennis.csv", "r");
+    if (inputFile == NULL)
+    {
+        printf("Error opening file");
+        return -1;
+    }
+
+    char row[50];
+    char *token;
+
+    //Count number of instances in input file
+    while (feof(inputFile) != true)
+    {
+        fgets(row, 50, inputFile);
+        count++;
+    }
+    fclose(inputFile);
+    return count;
+}
+
+int importData(int data[numInstances][NUM_ATTRIBUTES+1])
+{
+    FILE *inputFile = fopen("tennis.csv", "r");
+    if (inputFile == NULL)
+    {
+        printf("Error opening file");
+        return -1;
+    }
+
+    char row[50];
+    char *token;
+
+    //Parse input CSV into data instance struct array
+    while (feof(inputFile) != true)
+    {
+        for (int i = 0; i < numInstances; i++)
+        {
+            fgets(row, 50, inputFile);
+            token = strtok(row, ",");
+            for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
             {
-            //IG
-            case 0:
-                attributeGain[i] = ig_gain(currentInstances, data, i);
-                break;
-            //ME
-            case 1:
-                //attributeGain[i] = me_gain(currentInstances[currentDepth], data);
-                break;
-            //Gini
-            case 2:
-                //attributeGain[i] = gini_gain(currentInstances[currentDepth], data);
-                break;
+                data[i][j] = attributeToInt(token);
+                token = strtok(NULL, ",\r\n");
             }
         }
+    }
+    fclose(inputFile);
+    return 0;
 
-        //Find max gain attribute
-        for (int i = 0; i < NUM_ATTRIBUTES; i++)
-        {
-            printf("gain: %f\n", initialInformation-attributeGain[i]);
-            if (initialInformation - attributeGain[i] > bestGain)
-            {
-                bestGain = initialInformation - attributeGain[i];
-                bestAttribute = i;
-            }
-        }
-
-        printf("Splitting on attribute: %d\n", bestAttribute);
-        return bestAttribute;
-        //numLeaves[currentDepth] = numValues[bestAttribute];
-        //printf("leaves below: %d", numLeaves[currentDepth]);
-        //Check for other splits to decide on this level
-        //if (currentDepth == 0)
-        //    currentDepth++;
-        //else
-        //{
-        //    if (numLeavesSplit[currentDepth-1] == numLeaves[currentDepth-1])
-        //        currentDepth++;
-        //    else
-
-        //}
-
+    //Create array of instance structs
+    
+    /*
+        data[inst][0] - outlook
+            sunny - 0
+            overcast - 1
+            rainy - 2
+        data[]inst[1] - temperature
+            hot - 0
+            medium - 1
+            cool - 2
+        data[inst][2] - humidity
+            high - 0
+            normal - 1
+            low - 2
+        data[inst][3] - wind
+            strong - 0
+            weak - 1
+        data[inst][4] - play
+            no - 0
+            yes - 1
+    */
 }
 
 //Convert attribute strings from input dataset to integers
@@ -357,3 +325,59 @@ int attributeToInt(char* attribute)
         return -1;
 }
 
+int getMethod(void)
+{
+    char userInput;
+    bool userInputValid;
+    int method;
+    do 
+    {
+        printf("Select attribute split method:\n\tInformation gain (I)\n\tMajority error (M)\n\tGini index (G)\n\n");
+        scanf("%c", &userInput);
+        printf("\n");
+        switch (userInput)
+        {
+            case 'I':
+                userInputValid = true;
+                method = 0;
+                break;
+            case 'M':
+                userInputValid = true;
+                method = 1;
+                break;
+            case 'G':
+                userInputValid = true;
+                method = 2;
+                break;
+            default:
+                printf("Invalid selection\n\n");
+                userInputValid = false;
+        }
+    } while (!userInputValid);
+    return method;
+}
+
+int getMaxDepth(void)
+{
+    char userInput;
+    bool userInputValid;
+    int depth;
+
+    do
+    {
+        printf("Select maximum tree depth (1-6)\n\n");
+        scanf("%c", &userInput);
+        printf("\n");
+        if (userInput >= '1' && userInput <= '6')
+        {
+            userInputValid = true;
+            depth = userInput-48;
+        }
+        else
+        {
+            printf("Invalid selection\n\n");
+            userInputValid = false;
+        }
+    } while (!userInputValid);
+    return depth;
+}
