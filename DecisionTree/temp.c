@@ -27,7 +27,7 @@ struct Branch
     int parent;     //The ID of the parent branch
     int leaf[NUM_VALUES];    //The IDs of the leaves of this branch
     int attribute;  //The attribute this branch is split on (if any)
-    int label;      //The label for this branch (if any)
+    int label;      //The label for this branch (-1 no label, -2 all children labelled)
 };
 
 int main()
@@ -67,7 +67,18 @@ int main()
         tree[i].attribute = -1;
         tree[i].label = -1;
     }
-
+/* dumb stuff probably just delete
+    for (int i = 0; i < 20; i++)
+    {
+        if (i > 10)
+        {
+            if (i > 12)
+                printf("dbif: %d\n",i);
+            printf("if: %d\n",i) ;
+        }
+        printf("loop: %d\n",i);
+    }
+*/
     //Initialize head of tree
     int currentInstances[numInstances];
     for (int i = 0; i < numInstances; i++)
@@ -75,6 +86,34 @@ int main()
     int branchIndex = 0;
     tree[0].active = true;
     tree[0].level = 1;
+
+    /*
+    start at branch 0
+    
+    loop
+        if current level > max level
+            assign all branches on current level a label based on most common
+        else
+            if ready to label
+                label
+                set branch index to parent
+                if all leaves are labelled
+                    set branch index back to parent (if not head)
+                else
+                    set branch index to next unlabelled leaf
+            else
+                if leaves on this node exist
+                    if all leaves are labelled (or all children labelled)
+                        set branch index back to parent (if not head)
+                    else
+                        set branch index to next unlabeled leaf
+                else
+                    find new current instances
+                    split level based on attribute other than parent
+                    create leaves
+                    set branch index to first leaf
+    */  
+
     tree[0].attribute = splitLeaf(currentInstances, data, numInstances, method);
 
     //Flags to check if each value exists for the chosen attribute
