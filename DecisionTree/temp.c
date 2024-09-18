@@ -87,12 +87,14 @@ int main()
     tree[0].active = true;
     tree[0].level = 1;
 
+
     /*
     start at branch 0
     
     loop
         if current level > max level
             assign all branches on current level a label based on most common
+            done
         else
             if ready to label
                 label
@@ -104,7 +106,10 @@ int main()
             else
                 if leaves on this node exist
                     if all leaves are labelled (or all children labelled)
-                        set branch index back to parent (if not head)
+                        if on head
+                            done
+                        else
+                            set branch index back to parent
                     else
                         set branch index to next unlabeled leaf
                 else
