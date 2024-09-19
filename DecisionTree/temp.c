@@ -11,14 +11,14 @@
 int numValues[NUM_ATTRIBUTES] = {3, 3, 3, 2};
 #define MAX_VAL 3 
 
-int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method);
+int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, int parentAttribute);
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
 float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
 
 
 int countData(void);
 int importData(int data[][NUM_ATTRIBUTES+1], int numInstances);
-int attributeToInt(char* attribute);
+int valueToInt(char* value);
 int getMethod(void);
 int getMaxDepth(void);
 
@@ -44,7 +44,7 @@ int main()
         return 1;
     int data[numInstances][NUM_ATTRIBUTES+1];
     importData(data, numInstances);
-/*
+
     for (int i = 0; i < numInstances; i++)
     {
         printf("%d: ", i);
@@ -54,7 +54,7 @@ int main()
         }
         printf("\n");
     }
-*/
+
 
     int maxDepth = 6;
     int method = 0;
@@ -77,18 +77,7 @@ int main()
         tree[i].value = -1;
         tree[i].label = -1;
     }
-/* dumb stuff probably just delete
-    for (int i = 0; i < 20; i++)
-    {
-        if (i > 10)
-        {
-            if (i > 12)
-                printf("dbif: %d\n",i);
-            printf("if: %d\n",i) ;
-        }
-        printf("loop: %d\n",i);
-    }
-*/
+
     //Initialize head of tree
     int currentInstances[numInstances];
     for (int i = 0; i < numInstances; i++)
@@ -99,6 +88,15 @@ int main()
 
     while(!allDone)
     {
+        printf("entering loop at branchIndex: %d, parent: %d, attribute: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute);
+     if (branchIndex == 4)
+     {
+        for (int i = 0; i < 4; i++)
+        {
+            printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d, value: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute, tree[i].value);
+        }
+        return 0;
+     }
         int lastLabel = -1;
         bool readyToLabel = true;
         bool allLeavesLabelled = true;
@@ -245,22 +243,24 @@ int main()
                             //the new instance space should be the 
                             //instances where the value of the attribute of the 
                             //parent matches the index of the leaf that the current branch is on the parent
-                            if (data[i][tree[branchIndex].attribute] == tree[branchIndex].value])
+                            if (data[i][tree[branchIndex].attribute] == tree[branchIndex].value)
                             {
                                 currentInstances[i] = i;
+                                printf("%d == %d\n", data[i][tree[branchIndex].attribute], tree[branchIndex].value);
                             }
                             else
                             {
                                 currentInstances[i] = -1;
                             }
+                            printf("%d\n", currentInstances[i]);
                         }
                     }
                     //split
-                    tree[branchIndex].attribute = splitLeaf(currentInstances, data, numInstances, method);
+                    tree[branchIndex].attribute = splitLeaf(currentInstances, data, numInstances, method, tree[tree[branchIndex].parent].attribute);
                     //create leaves & assign values
                     for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                     {
-                        tree[branchIndex].leaf[i] = getNextID();
+                        tree[branchIndex].leaf[i] = getNextID(tree, maxBranches);
                         tree[tree[branchIndex].leaf[i]].active = true;
                         tree[tree[branchIndex].leaf[i]].value = i;
                         tree[tree[branchIndex].leaf[i]].parent = branchIndex;
@@ -318,7 +318,7 @@ int main()
     return 0;
 }
 
-int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method)
+int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, int parentAttribute)
 {
     //Main algorithm loop
     float initialInformation;
@@ -343,35 +343,44 @@ int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInsta
             break;
     }
     printf("init: %f\n", initialInformation);
-    //Calculate gain of splitting on each attribute
+    //Calculate gain of splitting on each attribute, other than parent branch attribute
     for (int i = 0; i < NUM_ATTRIBUTES; i++)
     {
-        switch (method)
+        if (i != parentAttribute)
         {
-        //IG
-        case 0:
-            attributeGain[i] = ig_gain(currentInstances, data, numInstances, i);
-            break;
-        //ME
-        case 1:
-            //attributeGain[i] = me_gain(currentInstances[currentDepth], data);
-            break;
-        //Gini
-        case 2:
-            //attributeGain[i] = gini_gain(currentInstances[currentDepth], data);
-            break;
+            switch (method)
+            {
+                //IG
+            case 0:
+                attributeGain[i] = ig_gain(currentInstances, data, numInstances, i);
+                break;
+            //ME
+            case 1:
+                //attributeGain[i] = me_gain(currentInstances[currentDepth], data);
+                break;
+            //Gini
+            case 2:
+                //attributeGain[i] = gini_gain(currentInstances[currentDepth], data);
+                break;
+            }
+        }
+        else
+        {
+            attributeGain[i] = 1;
         }
     }
     
     //Find max gain attribute
     for (int i = 0; i < NUM_ATTRIBUTES; i++)
     {
+        printf("gain of splitting on %d: %f\n", i, initialInformation-attributeGain[i]);
         if (initialInformation - attributeGain[i] > bestGain)
         {
             bestGain = initialInformation - attributeGain[i];
             bestAttribute = i;
         }
     }
+    printf("splitting on: %d\n", bestAttribute);
     return bestAttribute;
 }
 
@@ -406,6 +415,7 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
     float entropy[numValues[attribute]];
     float weightedEntropy = 0;
 
+    //Initialize values to zero
     for (int j = 0; j < numValues[attribute]; j++)
     {
         valueCount[j] = 0;
@@ -414,10 +424,12 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
         entropy[j] = 0;
     }
 
+    //for each instance that is in the current subset
     for (int i = 0; i < numInstances; i++)
     {
         if (subset[i] != -1)
         {
+            //count values for each attribute and their label
             for (int j = 0; j < numValues[attribute]; j++)
             {
                 if (dataset[i][attribute] == j)
@@ -430,9 +442,12 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
                         noCount[j]++;
                 }
             }
+            printf("att: %d, tc: %f, val: %d, vc: %f, yc: %f, nc: %f\n", attribute, totalCount, dataset[i][attribute], valueCount[dataset[i][attribute]], yesCount[dataset[i][attribute]], noCount[dataset[i][attribute]]);
         }
     }
     
+
+
     for (int j = 0; j < numValues[attribute]; j++)
     {
         if (yesCount[j] == 0 || noCount[j] == 0)
@@ -489,7 +504,7 @@ int importData(int data[][NUM_ATTRIBUTES+1], int numInstances)
             token = strtok(row, ",");
             for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
             {
-                data[i][j] = attributeToInt(token);
+                data[i][j] = valueToInt(token);
                 token = strtok(NULL, ",\r\n");
             }
         }
@@ -498,8 +513,8 @@ int importData(int data[][NUM_ATTRIBUTES+1], int numInstances)
     return 0;
 }
 
-//Convert attribute strings from input dataset to integers
-int attributeToInt(char* attribute)
+//Convert value strings from input dataset to integers
+int valueToInt(char* value)
 {
     /*
         data[inst][0] - outlook
@@ -522,11 +537,11 @@ int attributeToInt(char* attribute)
             yes - 1
     */
 
-    if (!strcmp(attribute, "sunny") || !strcmp(attribute, "hot") || !strcmp(attribute, "high") || !strcmp(attribute, "strong") || !strcmp(attribute, "no"))
+    if (!strcmp(value, "sunny") || !strcmp(value, "hot") || !strcmp(value, "high") || !strcmp(value, "strong") || !strcmp(value, "no"))
         return 0;
-    else if (!strcmp(attribute, "overcast") || !strcmp(attribute, "medium") || !strcmp(attribute, "normal") || !strcmp(attribute, "weak") || !strcmp(attribute, "yes"))
+    else if (!strcmp(value, "overcast") || !strcmp(value, "medium") || !strcmp(value, "normal") || !strcmp(value, "weak") || !strcmp(value, "yes"))
         return 1;
-    else if (!strcmp(attribute, "rainy") || !strcmp(attribute, "cool") || !strcmp(attribute, "low"))
+    else if (!strcmp(value, "rainy") || !strcmp(value, "cool") || !strcmp(value, "low"))
         return 2;
     else
         return -1;
