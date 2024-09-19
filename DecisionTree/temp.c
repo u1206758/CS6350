@@ -11,7 +11,7 @@
 int numValues[NUM_ATTRIBUTES] = {3, 3, 3, 2};
 #define MAX_VAL 3 
 
-int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, int parentAttribute);
+int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES]);
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
 float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
 
@@ -89,11 +89,11 @@ int main()
     while(!allDone)
     {
         printf("entering loop at branchIndex: %d, parent: %d, attribute: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute);
-     if (branchIndex == 4)
+     if (branchIndex == 10)
      {
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 10; i++)
         {
-            printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d, value: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute, tree[i].value);
+            printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d, value: %d, label: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute, tree[i].value, tree[i].label);
         }
         return 0;
      }
@@ -108,6 +108,11 @@ int main()
         }
         int maxLabelCount = 0;
         int maxLabel = -1;
+        bool parentAttribute[NUM_ATTRIBUTES];
+        for (int i = 0; i < NUM_ATTRIBUTES; i++)
+        {
+            parentAttribute[i] = false;
+        }
 
         //If current branch/leaf is at max level
         if (tree[branchIndex].level > maxDepth)
@@ -251,13 +256,17 @@ int main()
                             {
                                 currentInstances[i] = -1;
                             }
-                            printf("%d\n", tree[branchIndex].attribute);
-                            printf("%d == %d\n", data[i][tree[branchIndex].attribute], tree[branchIndex].value);
-                            printf("%d\n", currentInstances[i]);
                         }
                     }
+                    //Find all attributes already split in the current path
+                    int tempIndex = tree[branchIndex].parent;
+                    while (tempIndex > -1)
+                    {
+                        parentAttribute[tree[tempIndex].attribute] = true;
+                        tempIndex = tree[tempIndex].parent;
+                    }
                     //split
-                    tree[branchIndex].attribute = splitLeaf(currentInstances, data, numInstances, method, tree[tree[branchIndex].parent].attribute);
+                    tree[branchIndex].attribute = splitLeaf(currentInstances, data, numInstances, method, parentAttribute);
                     //create leaves & assign values
                     for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                     {
@@ -319,7 +328,7 @@ int main()
     return 0;
 }
 
-int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, int parentAttribute)
+int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES])
 {
     //Main algorithm loop
     float initialInformation;
@@ -347,7 +356,7 @@ int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInsta
     //Calculate gain of splitting on each attribute, other than parent branch attribute
     for (int i = 0; i < NUM_ATTRIBUTES; i++)
     {
-        if (i != parentAttribute)
+        if (!parentAttribute[i])
         {
             switch (method)
             {
@@ -443,7 +452,7 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
                         noCount[j]++;
                 }
             }
-            printf("att: %d, tc: %f, val: %d, vc: %f, yc: %f, nc: %f\n", attribute, totalCount, dataset[i][attribute], valueCount[dataset[i][attribute]], yesCount[dataset[i][attribute]], noCount[dataset[i][attribute]]);
+            //printf("att: %d, tc: %f, val: %d, vc: %f, yc: %f, nc: %f\n", attribute, totalCount, dataset[i][attribute], valueCount[dataset[i][attribute]], yesCount[dataset[i][attribute]], noCount[dataset[i][attribute]]);
         }
     }
     
