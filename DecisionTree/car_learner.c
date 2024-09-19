@@ -55,11 +55,13 @@ int main()
     {
         return 1;
     }
+    printf("data counted %d\n", numInstances);
     int data[numInstances][NUM_ATTRIBUTES+1];
+    printf("data array created\n");
     importData(data, numInstances);
     int method = getMethod();
     int maxDepth = getMaxDepth();
-
+    printf("data imported\n");
     int maxBranches = 0;
     for (int i = 0; i < maxDepth+1; i++)
     {
@@ -412,21 +414,30 @@ int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numIns
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
 {
     float totalCount = 0;
-    float yesCount = 0;
-    float noCount = 0;
+    float labelCount[NUM_LABELS];
+    float init = 0;
+
     for (int i = 0; i < numInstances; i++)
     {
         if (subset[i] != -1)
         {
             totalCount++;
-            if (dataset[i][NUM_ATTRIBUTES] == 1)
-                yesCount++;
-            else
-                noCount++;
+            for (int j = 0; j < NUM_LABELS; j++)
+            {
+                if (dataset[i][NUM_ATTRIBUTES] == j)
+                {
+                    labelCount[j]++;
+                }       
+            }
         }
     }
 
-    return -(yesCount/totalCount)*log2(yesCount/totalCount)-(noCount/totalCount)*log2(noCount/totalCount);
+    for (int i = 0; i < NUM_LABELS; i++)
+    {
+        init -= ((labelCount[i]/totalCount)*log2(labelCount[i]/totalCount));
+    }
+
+    return init;
 }
 
 //Calculate weighted entropy gain for each attribute in current instance set
@@ -434,8 +445,7 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
 {
     float totalCount = 0;
     float valueCount[numValues[attribute]];
-    float yesCount[numValues[attribute]];
-    float noCount[numValues[attribute]];
+    float labelCount[numValues[attribute]][NUM_LABELS];
     float entropy[numValues[attribute]];
     float weightedEntropy = 0;
 
@@ -443,8 +453,10 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
     for (int j = 0; j < numValues[attribute]; j++)
     {
         valueCount[j] = 0;
-        yesCount[j] = 0;
-        noCount[j] = 0;
+        for (int k = 0; k < NUM_LABELS; k++)
+        {
+            labelCount[j][k] = 0;
+        }
         entropy[j] = 0;
     }
 
@@ -460,13 +472,12 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
                 {
                     valueCount[j]++;
                     totalCount++;
-                    if (dataset[i][NUM_ATTRIBUTES] == 1)
+                    for (int k = 0; k < NUM_LABELS; k++)
                     {
-                        yesCount[j]++;
-                    }
-                    else
-                    {
-                        noCount[j]++;
+                        if (dataset[i][NUM_ATTRIBUTES] == labelCount[j][k])
+                        {
+                            labelCount[j][k]++;
+                        }
                     }
                 }
             }
@@ -477,13 +488,17 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
 
     for (int j = 0; j < numValues[attribute]; j++)
     {
-        if (yesCount[j] == 0 || noCount[j] == 0)
+        for (int k = 0; k < NUM_LABELS; k++)
         {
-            entropy[j] = 0;
-        }
-        else
-        {
-            entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
+            if (labelCount[j][k] == 0)
+            {
+                entropy[j] = 0;
+            }
+            else
+            {
+                entropy[j] -= ((labelCount[j][k]/valueCount[j])*log2(labelCount[j][k]/valueCount[j]));
+                //entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
+            }
         }
         weightedEntropy += valueCount[j]/totalCount*entropy[j];
     }
@@ -673,19 +688,19 @@ int countData(void)
      int count = 0;
 
     //Open input file
-    FILE *inputFile = fopen("tennis.csv", "r");
+    FILE *inputFile = fopen("test.csv", "r");
     if (inputFile == NULL)
     {
         printf("Error opening file");
         return -1;
     }
 
-    char row[50];
+    char row[100];
 
     //Count number of instances in input file
     while (feof(inputFile) != true)
     {
-        fgets(row, 50, inputFile);
+        fgets(row, 100, inputFile);
         count++;
     }
     fclose(inputFile);
@@ -694,14 +709,14 @@ int countData(void)
 
 int importData(int data[][NUM_ATTRIBUTES+1], int numInstances)
 {
-    FILE *inputFile = fopen("tennis.csv", "r");
+    FILE *inputFile = fopen("test.csv", "r");
     if (inputFile == NULL)
     {
         printf("Error opening file");
         return -1;
     }
 
-    char row[50];
+    char row[100];
     char *token;
 
     //Parse input CSV into data instance struct array
@@ -709,12 +724,16 @@ int importData(int data[][NUM_ATTRIBUTES+1], int numInstances)
     {
         for (int i = 0; i < numInstances; i++)
         {
-            fgets(row, 50, inputFile);
+            if (fgets(row, 100, inputFile) == NULL)
+                return 0;
+            else
+            {
             token = strtok(row, ",");
             for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
             {
                 data[i][j] = valueToInt(token, j);
                 token = strtok(NULL, ",\r\n");
+            }
             }
         }
     }
