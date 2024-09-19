@@ -15,6 +15,10 @@ int numValues[NUM_ATTRIBUTES] = {3, 3, 3, 2};
 int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex);
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
 float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
+float me_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
+float me_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
+float gini_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
+float gini_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
 
 int countData(void);
 int importData(int data[][NUM_ATTRIBUTES+1], int numInstances);
@@ -466,11 +470,11 @@ int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numIns
             break;
         //ME
         case 1:
-            //initialInformation = me_initial(currentInstances[currentDepth], data);
+            initialInformation = me_initial(currentInstances, data, numInstances);
             break;
         //Gini
         case 2:
-            //initialInformation = gini_initial(currentInstances[currentDepth], data);
+            initialInformation = gini_initial(currentInstances, data, numInstances);
             break;
     }
     printf("init: %f\n", initialInformation);
@@ -487,11 +491,11 @@ int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numIns
                 break;
             //ME
             case 1:
-                //attributeGain[i] = me_gain(currentInstances[currentDepth], data);
+                attributeGain[i] = me_gain(currentInstances, data, numInstances, i);
                 break;
             //Gini
             case 2:
-                //attributeGain[i] = gini_gain(currentInstances[currentDepth], data);
+                attributeGain[i] = gini_gain(currentInstances, data, numInstances, i);
                 break;
             }
         }
@@ -568,6 +572,188 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
                     valueCount[j]++;
                     totalCount++;
                     if (dataset[i][NUM_ATTRIBUTES] == 1)
+                    {
+                        yesCount[j]++;
+                    }
+                    else
+                    {
+                        noCount[j]++;
+                    }
+                }
+            }
+        }
+    }
+    
+
+
+    for (int j = 0; j < numValues[attribute]; j++)
+    {
+        if (yesCount[j] == 0 || noCount[j] == 0)
+        {
+            entropy[j] = 0;
+        }
+        else
+        {
+            entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
+        }
+        weightedEntropy += valueCount[j]/totalCount*entropy[j];
+    }
+    return weightedEntropy;
+}
+
+//Calculate majority error on labels for current set of instances
+float me_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
+{
+    float totalCount = 0;
+    float yesCount = 0;
+    float noCount = 0;
+    for (int i = 0; i < numInstances; i++)
+    {
+        if (subset[i] != -1)
+        {
+            totalCount++;
+            if (dataset[i][NUM_ATTRIBUTES] == 1)
+            {
+                yesCount++;
+            }
+            else
+            {
+                noCount++;
+            }
+        }
+    }
+
+    if (yesCount >= noCount)
+    {
+        return 1 - (yesCount/totalCount);
+    }
+    else
+    {
+        return 1 - (noCount/totalCount);
+    }
+}
+
+//Calculate weighted majority error gain for each attribute in current instance set
+float me_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
+{
+    float totalCount = 0;
+    float valueCount[numValues[attribute]];
+    float yesCount[numValues[attribute]];
+    float noCount[numValues[attribute]];
+    float me[numValues[attribute]];
+    float weightedme = 0;
+
+    //Initialize values to zero
+    for (int j = 0; j < numValues[attribute]; j++)
+    {
+        valueCount[j] = 0;
+        yesCount[j] = 0;
+        noCount[j] = 0;
+        me[j] = 0;
+    }
+
+    //for each instance that is in the current subset
+    for (int i = 0; i < numInstances; i++)
+    {
+        if (subset[i] != -1)
+        {
+            //count values for each attribute and their label
+            for (int j = 0; j < numValues[attribute]; j++)
+            {
+                if (dataset[i][attribute] == j)
+                {
+                    valueCount[j]++;
+                    totalCount++;
+                    if (dataset[i][NUM_ATTRIBUTES] == 1)
+                    {
+                        yesCount[j]++;
+                    }
+                    else
+                    {
+                        noCount[j]++;
+                    }
+                }
+            }
+        }
+    }
+    
+
+
+    for (int j = 0; j < numValues[attribute]; j++)
+    {
+        if (valueCount[j] == 0)
+        {
+            me[j] = 1;
+        }
+        else
+        {
+            if (yesCount[j] >= noCount[j])
+            {
+                me[j] = 1 - (yesCount[j]/valueCount[j]);
+            }
+            else
+            {
+                me[j] = 1 - (noCount[j]/valueCount[j]);
+            }
+        }
+        weightedme += valueCount[j]/totalCount*me[j];
+    }
+    return weightedme;
+}
+
+//Calculate gini on labels for current set of instances
+float gini_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
+{
+    float totalCount = 0;
+    float yesCount = 0;
+    float noCount = 0;
+    for (int i = 0; i < numInstances; i++)
+    {
+        if (subset[i] != -1)
+        {
+            totalCount++;
+            if (dataset[i][NUM_ATTRIBUTES] == 1)
+                yesCount++;
+            else
+                noCount++;
+        }
+    }
+
+    return 1 - ((yesCount/totalCount)*(yesCount/totalCount) + (noCount/totalCount)*(noCount/totalCount));
+}
+
+//Calculate weighted gini gain for each attribute in current instance set
+float gini_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
+{
+    float totalCount = 0;
+    float valueCount[numValues[attribute]];
+    float yesCount[numValues[attribute]];
+    float noCount[numValues[attribute]];
+    float gini[numValues[attribute]];
+    float weightedGini = 0;
+
+    //Initialize values to zero
+    for (int j = 0; j < numValues[attribute]; j++)
+    {
+        valueCount[j] = 0;
+        yesCount[j] = 0;
+        noCount[j] = 0;
+        gini[j] = 0;
+    }
+
+    //for each instance that is in the current subset
+    for (int i = 0; i < numInstances; i++)
+    {
+        if (subset[i] != -1)
+        {
+            //count values for each attribute and their label
+            for (int j = 0; j < numValues[attribute]; j++)
+            {
+                if (dataset[i][attribute] == j)
+                {
+                    valueCount[j]++;
+                    totalCount++;
+                    if (dataset[i][NUM_ATTRIBUTES] == 1)
                         yesCount[j]++;
                     else
                         noCount[j]++;
@@ -580,13 +766,17 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
 
     for (int j = 0; j < numValues[attribute]; j++)
     {
-        if (yesCount[j] == 0 || noCount[j] == 0)
-            entropy[j] = 0;
+        if (valueCount[j] == 0)
+        {
+            gini[j] = 1;
+        }
         else
-            entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
-        weightedEntropy += valueCount[j]/totalCount*entropy[j];
+        {
+            gini[j] = 1 - ((yesCount[j]/valueCount[j])*(yesCount[j]/valueCount[j]) + (noCount[j]/valueCount[j])*(noCount[j]/valueCount[j]));
+        }
+        weightedGini += valueCount[j]/totalCount*gini[j];
     }
-    return weightedEntropy;
+    return weightedGini;
 }
 
 int countData(void)
