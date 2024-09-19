@@ -89,7 +89,7 @@ int main()
     while(!allDone)
     {
         printf("entering loop at branchIndex: %d, parent: %d, attribute: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute);
-     if (branchIndex == 10)
+     if (branchIndex < 0)
      {
         for (int i = 0; i < 10; i++)
         {
@@ -270,7 +270,22 @@ int main()
                             every instance where parentAttribute == leaf value AND
                             parentParentAttribute == leafParent value etc
                             */
-                            if (data[i][tree[tree[branchIndex].parent].attribute] == tree[branchIndex].value)
+
+                           /*for (int j = 0; j < NUM_ATTRIBUTES; j++)
+                           {
+                                if (parentAttribute[j])
+                                {
+                                    if (parentValue[j] == data[i][j])
+                                    {
+                                        printf("atr: %d, val: %d, dat: %d\n", j, parentValue[j], i);
+                                        currentInstances[i] = i;
+                                        break;
+                                    }
+                                }
+                                currentInstances[i] = -1;
+                           }*/
+
+                            if (data[i][tree[tree[branchIndex].parent].attribute] == tree[branchIndex].value && currentInstances[i] != -1)
                             {
                                 currentInstances[i] = i;
                             }
