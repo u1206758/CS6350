@@ -243,15 +243,16 @@ int main()
                             //the new instance space should be the 
                             //instances where the value of the attribute of the 
                             //parent matches the index of the leaf that the current branch is on the parent
-                            if (data[i][tree[branchIndex].attribute] == tree[branchIndex].value)
+                            if (data[i][tree[tree[branchIndex].parent].attribute] == tree[branchIndex].value)
                             {
                                 currentInstances[i] = i;
-                                printf("%d == %d\n", data[i][tree[branchIndex].attribute], tree[branchIndex].value);
                             }
                             else
                             {
                                 currentInstances[i] = -1;
                             }
+                            printf("%d\n", tree[branchIndex].attribute);
+                            printf("%d == %d\n", data[i][tree[branchIndex].attribute], tree[branchIndex].value);
                             printf("%d\n", currentInstances[i]);
                         }
                     }
