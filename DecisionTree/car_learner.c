@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#define NUM_I 728
 #define NUM_LABELS 4
 #define NUM_ATTRIBUTES 6
 int numValues[NUM_ATTRIBUTES] = {4, 4, 4, 3, 3, 3};
@@ -28,7 +29,6 @@ int getMaxDepth(void);
 
 typedef struct
 {
-   // int id;         //ID (also array index) of current branch
     bool active;    //Whether this branch slot is used by the tree
     int level;      //The depth in the tree this branch is on
     int parent;     //The ID of the parent branch
@@ -36,6 +36,7 @@ typedef struct
     int attribute;  //The attribute this branch is split on (if any)
     int value;      //The value a leaf represents when split from parent branch
     int label;      //The label for this branch (-1 no label, -2 all children labelled)
+    int currentInstances[NUM_I];
 }Branch;
 
 void printTree(Branch tree[], int maxBranches);
@@ -67,8 +68,9 @@ int main()
     {
         maxBranches += (int)pow(MAX_VAL, i);
     }
-  
+    printf("made maxbranches\n");
     Branch tree[maxBranches];
+    printf("made tree\n");
     int currentLevel = 1;
     bool allDone = false;
 
@@ -84,13 +86,17 @@ int main()
         tree[i].value = -1;
         tree[i].label = -1;
     }
-
+    printf("tree initialized %d  * %d * %d = %d\n",sizeof(int), maxBranches, numInstances, sizeof(int)*maxBranches*numInstances);
     //Initialize head of tree
     int currentInstances[maxBranches][numInstances];
+    //nt currentInstances[5461][7];
+    printf("created current instances array\n");
+    return 0;
     for (int i = 0; i < maxBranches; i++)
     {
         for (int j = 0; j < numInstances; j++)
         {
+            printf("i: %d  j: %d", i, j);
             if (i == 0)
             {
                 currentInstances[i][j] = j;
@@ -101,10 +107,12 @@ int main()
             }
         }
     }
+    printf("current Instances set\n");
     int branchIndex = 0;
     tree[0].active = true;
     tree[0].level = 1;
 
+    printf("about to enter loop\n");
     while(!allDone)
     {
         int lastLabel = -1;
@@ -700,8 +708,15 @@ int countData(void)
     //Count number of instances in input file
     while (feof(inputFile) != true)
     {
-        fgets(row, 100, inputFile);
-        count++;
+        if (fgets(row, 100, inputFile) == NULL)
+        {
+            fclose(inputFile);
+            return count;
+        }
+        else
+        {
+            count++;
+        }
     }
     fclose(inputFile);
     return count;
@@ -725,15 +740,18 @@ int importData(int data[][NUM_ATTRIBUTES+1], int numInstances)
         for (int i = 0; i < numInstances; i++)
         {
             if (fgets(row, 100, inputFile) == NULL)
+            {
+                fclose(inputFile);
                 return 0;
+            }
             else
             {
-            token = strtok(row, ",");
-            for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
-            {
-                data[i][j] = valueToInt(token, j);
-                token = strtok(NULL, ",\r\n");
-            }
+                token = strtok(row, ",");
+                for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
+                {
+                    data[i][j] = valueToInt(token, j);
+                    token = strtok(NULL, ",\r\n");
+                }
             }
         }
     }
