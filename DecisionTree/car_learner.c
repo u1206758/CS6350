@@ -763,79 +763,71 @@ int valueToInt(char* value, int attribute)
    switch (attribute)
    {
         case 0:
-            if (!strcmp(value "vhigh"))
+            if (!strcmp(value, "vhigh"))
                 return 0;
-            else if (!strcmp(value "high"))
+            else if (!strcmp(value, "high"))
                 return 1;
-            else if (!strcmp(value "med"))
+            else if (!strcmp(value, "med"))
                 return 2;
-            else if (!strcmp(value "low"))
+            else if (!strcmp(value, "low"))
                 return 3;
             break;
         case 1:
-            if (!strcmp(value "vhigh"))
+            if (!strcmp(value, "vhigh"))
                 return 0;
-            else if (!strcmp(value "high"))
+            else if (!strcmp(value, "high"))
                 return 1;
-            else if (!strcmp(value "med"))
+            else if (!strcmp(value, "med"))
                 return 2;
-            else if (!strcmp(value "low"))
+            else if (!strcmp(value, "low"))
                 return 3;
             break;
         case 2:
-            if (!strcmp(value "2"))
+            if (!strcmp(value, "2"))
                 return 0;
-            else if (!strcmp(value "3"))
+            else if (!strcmp(value, "3"))
                 return 1;
-            else if (!strcmp(value "4"))
+            else if (!strcmp(value, "4"))
                 return 2;
-            else if (!strcmp(value "5more"))
+            else if (!strcmp(value, "5more"))
                 return 3;
             break;
         case 3:
-            if (!strcmp(value "2"))
+            if (!strcmp(value, "2"))
                 return 0;
-            else if (!strcmp(value "4"))
+            else if (!strcmp(value, "4"))
                 return 1;
-            else if (!strcmp(value "more"))
+            else if (!strcmp(value, "more"))
                 return 2;
             break;
         case 4:
-            if (!strcmp(value "small"))
+            if (!strcmp(value, "small"))
                 return 0;
-            else if (!strcmp(value "med"))
+            else if (!strcmp(value, "med"))
                 return 1;
-            else if (!strcmp(value "big"))
+            else if (!strcmp(value, "big"))
                 return 2;
             break;
         case 5:
-            if (!strcmp(value "low"))
+            if (!strcmp(value, "low"))
                 return 0;
-            else if (!strcmp(value "med"))
+            else if (!strcmp(value, "med"))
                 return 1;
-            else if (!strcmp(value "high"))
+            else if (!strcmp(value, "high"))
                 return 2;
             break;
         case 6:
-            if (!strcmp(value "unacc"))
+            if (!strcmp(value, "unacc"))
                 return 0;
-            else if (!strcmp(value "acc"))
+            else if (!strcmp(value, "acc"))
                 return 1;
-            else if (!strcmp(value "good"))
+            else if (!strcmp(value, "good"))
                 return 2;
-            else if (!strcmp(value "vgood"))
+            else if (!strcmp(value, "vgood"))
                 return 3;
             break;
    }
-
-    if (!strcmp(value, "vhigh") || !strcmp(value, "2") || !strcmp(value, "high") || !strcmp(value, "strong") || !strcmp(value, "no"))
-        return 0;
-    else if (!strcmp(value, "overcast") || !strcmp(value, "medium") || !strcmp(value, "normal") || !strcmp(value, "weak") || !strcmp(value, "yes"))
-        return 1;
-    else if (!strcmp(value, "rainy") || !strcmp(value, "cool") || !strcmp(value, "low"))
-        return 2;
-    else
-        return -1;
+   return -1;
 }
 
 int getMethod(void)
