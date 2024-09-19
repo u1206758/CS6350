@@ -947,16 +947,22 @@ void decodeAttribute(int attribute)
     switch (attribute)
     {
         case 0:
-            printf("'outlook'");
+            printf("'buying'");
             break;
         case 1:
-            printf("'temperature'");
+            printf("'maint'");
             break;
         case 2:
-            printf("'humidity'");
+            printf("'doors'");
             break;
         case 3:
-            printf("'wind'");
+            printf("'persons'");
+            break;
+        case 4:
+            printf("'lug_boot'");
+            break;
+        case 5:
+            printf("'safety'");
             break;
     }
 }
@@ -969,13 +975,16 @@ void decodeValue(int attribute, int value)
             switch (value)
             {
                 case 0:
-                    printf("'sunny'");
+                    printf("'vhigh'");
                     break;
                 case 1:
-                    printf("'overcast'");
+                    printf("'high'");
                     break;
                 case 2:
-                    printf("'rainy'");
+                    printf("'med'");
+                    break;
+                case 3:
+                    printf("'low'");
                     break;
             }
             break;
@@ -983,13 +992,16 @@ void decodeValue(int attribute, int value)
             switch (value)
             {
                 case 0:
-                    printf("'hot'");
+                    printf("'vhigh'");
                     break;
                 case 1:
-                    printf("'medium'");
+                    printf("'high'");
                     break;
                 case 2:
-                    printf("'cool'");
+                    printf("'med'");
+                    break;
+                case 3:
+                    printf("'low'");
                     break;
             }
             break;
@@ -997,13 +1009,16 @@ void decodeValue(int attribute, int value)
             switch (value)
             {
                 case 0:
-                    printf("'high'");
+                    printf("'2'");
                     break;
                 case 1:
-                    printf("'normal'");
+                    printf("'3'");
                     break;
                 case 2:
-                    printf("'low'");
+                    printf("'4'");
+                    break;
+                case 3:
+                    printf("'5more'");
                     break;
             }
             break;
@@ -1011,10 +1026,41 @@ void decodeValue(int attribute, int value)
             switch (value)
             {
                 case 0:
-                    printf("'strong'");
+                    printf("'2'");
                     break;
                 case 1:
-                    printf("'weak'");
+                    printf("'4'");
+                    break;
+                case 2:
+                    printf("'more'");
+                    break;
+            }
+            break;
+        case 4:
+            switch (value)
+            {
+                case 0:
+                    printf("'small'");
+                    break;
+                case 1:
+                    printf("'med'");
+                    break;
+                case 2:
+                    printf("'big'");
+                    break;
+            }
+            break;
+        case 5:
+            switch (value)
+            {
+                case 0:
+                    printf("'low'");
+                    break;
+                case 1:
+                    printf("'med'");
+                    break;
+                case 2:
+                    printf("'high'");
                     break;
             }
             break;
@@ -1026,10 +1072,16 @@ void decodeLabel(int label)
     switch (label)
     {
         case 0:
-            printf("'no'");
+            printf("'unacc'");
             break;
         case 1:
-            printf("'yes'");
+            printf("'acc'");
+            break;
+        case 2:
+            printf("'good'");
+            break;
+        case 3:
+            printf("'vgood'");
             break;
     }
 }
