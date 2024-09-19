@@ -15,7 +15,6 @@ int splitLeaf(int currentInstances[], int data[][NUM_ATTRIBUTES+1], int numInsta
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
 float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
 
-
 int countData(void);
 int importData(int data[][NUM_ATTRIBUTES+1], int numInstances);
 int valueToInt(char* value);
@@ -44,7 +43,7 @@ int main()
         return 1;
     int data[numInstances][NUM_ATTRIBUTES+1];
     importData(data, numInstances);
-
+/*
     for (int i = 0; i < numInstances; i++)
     {
         printf("%d: ", i);
@@ -54,7 +53,7 @@ int main()
         }
         printf("\n");
     }
-
+*/
 
     int maxDepth = 6;
     int method = 0;
@@ -79,9 +78,12 @@ int main()
     }
 
     //Initialize head of tree
-    int currentInstances[numInstances];
-    for (int i = 0; i < numInstances; i++)
+    int currentInstances[maxBranches][numInstances];
+    for (int i = 0; i < ; i++)
+    {
+        for (int j = 0; j < numInstances; j++)
         currentInstances[i] = i;
+    }
     int branchIndex = 0;
     tree[0].active = true;
     tree[0].level = 1;
@@ -89,14 +91,14 @@ int main()
     while(!allDone)
     {
         printf("entering loop at branchIndex: %d, parent: %d, attribute: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute);
-     if (branchIndex < 0)
-     {
-        for (int i = 0; i < 10; i++)
+        if (branchIndex > 4 || branchIndex < 0)
         {
-            printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d, value: %d, label: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute, tree[i].value, tree[i].label);
+            for (int i = 0; i < 10; i++)
+            {
+                printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d, value: %d, label: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute, tree[i].value, tree[i].label);
+            }
+            return 0;
         }
-        return 0;
-     }
         int lastLabel = -1;
         bool readyToLabel = true;
         bool allLeavesLabelled = true;
@@ -148,6 +150,7 @@ int main()
             //Check if all instances have same label
             for (int i = 0; i < numInstances; i++)
             {   
+                printf("tcI: %d\n", currentInstances[i]);
                 //If current instance is in current set
                 if (currentInstances[i] != -1)
                 {
@@ -161,6 +164,7 @@ int main()
                         if (lastLabel != data[i][NUM_ATTRIBUTES])
                         {
                             readyToLabel = false;
+                            printf("cI: %d\n", currentInstances[i]);
                             printf("broke because %d != %d\tdata[%d]\n", lastLabel, data[i][NUM_ATTRIBUTES], i);
                             break;
                         }
@@ -255,8 +259,8 @@ int main()
                         tempIndex = tree[tempIndex].parent;
                         parentAttribute[tree[tempIndex].attribute] = true;
                     }
-                    printf("pA: %d %d %d %d\n", parentAttribute[0], parentAttribute[1], parentAttribute[2], parentAttribute[3]);
-                    printf("pv: %d %d %d %d\n", parentValue[0], parentValue[1], parentValue[2], parentValue[3]);
+                    //printf("pA: %d %d %d %d\n", parentAttribute[0], parentAttribute[1], parentAttribute[2], parentAttribute[3]);
+                    //printf("pv: %d %d %d %d\n", parentValue[0], parentValue[1], parentValue[2], parentValue[3]);
                     //If not on the head
                     if (branchIndex != 0)
                     {
