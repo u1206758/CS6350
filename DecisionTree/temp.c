@@ -109,9 +109,11 @@ int main()
         int maxLabelCount = 0;
         int maxLabel = -1;
         bool parentAttribute[NUM_ATTRIBUTES];
+        int parentValue[NUM_ATTRIBUTES];
         for (int i = 0; i < NUM_ATTRIBUTES; i++)
         {
             parentAttribute[i] = false;
+            parentValue[i] = -1;
         }
 
         //If current branch/leaf is at max level
@@ -159,6 +161,7 @@ int main()
                         if (lastLabel != data[i][NUM_ATTRIBUTES])
                         {
                             readyToLabel = false;
+                            printf("broke because %d != %d\tdata[%d]\n", lastLabel, data[i][NUM_ATTRIBUTES], i);
                             break;
                         }
                         else
@@ -166,6 +169,7 @@ int main()
                             lastLabel = data[i][NUM_ATTRIBUTES];
                         }
                     }
+                    printf("cI: %d, lL: %d, cL: %d, rTL: %d\n", i, lastLabel, data[i][NUM_ATTRIBUTES], readyToLabel);
                 }
             }
             //If branch is ready to label
@@ -173,6 +177,7 @@ int main()
             {
                 //Label branch
                 tree[branchIndex].label = lastLabel;
+                printf("labelling branch %d with label %d\n", branchIndex, lastLabel);
                 //If index at head, all done, else set index to parent
                 if (branchIndex == 0)
                 {
@@ -239,15 +244,32 @@ int main()
                 }
                 else //no leaves, not ready to label, need to split
                 {
+                    //Find all attributes already split in the current path
+                    int tempIndex = branchIndex;//tree[branchIndex].parent;
+                    while (tempIndex > -1)
+                    {
+                        if (tempIndex > 0)
+                        {
+                            parentValue[tree[tree[tempIndex].parent].attribute] = tree[tempIndex].value;
+                        }
+                        tempIndex = tree[tempIndex].parent;
+                        parentAttribute[tree[tempIndex].attribute] = true;
+                    }
+                    printf("pA: %d %d %d %d\n", parentAttribute[0], parentAttribute[1], parentAttribute[2], parentAttribute[3]);
+                    printf("pv: %d %d %d %d\n", parentValue[0], parentValue[1], parentValue[2], parentValue[3]);
                     //If not on the head
                     if (branchIndex != 0)
                     {
                         //set new subset of current instances
                         for (int i = 0; i < numInstances; i++)
                         {
-                            //the new instance space should be the 
-                            //instances where the value of the attribute of the 
-                            //parent matches the index of the leaf that the current branch is on the parent
+                            /* the new instance space should include every instance where the value of the instance for the parent attribute
+                            matches the value of the current leaf and the value of the parent attribute in the instance
+                            matches the value of the parent leaf all the way up the chain
+
+                            every instance where parentAttribute == leaf value AND
+                            parentParentAttribute == leafParent value etc
+                            */
                             if (data[i][tree[tree[branchIndex].parent].attribute] == tree[branchIndex].value)
                             {
                                 currentInstances[i] = i;
@@ -256,14 +278,8 @@ int main()
                             {
                                 currentInstances[i] = -1;
                             }
+                            printf("is: %d\n", currentInstances[i]);
                         }
-                    }
-                    //Find all attributes already split in the current path
-                    int tempIndex = tree[branchIndex].parent;
-                    while (tempIndex > -1)
-                    {
-                        parentAttribute[tree[tempIndex].attribute] = true;
-                        tempIndex = tree[tempIndex].parent;
                     }
                     //split
                     tree[branchIndex].attribute = splitLeaf(currentInstances, data, numInstances, method, parentAttribute);
