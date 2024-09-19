@@ -135,14 +135,18 @@ int main()
         //If current branch/leaf is at max level
         if (tree[branchIndex].level > maxDepth)
         {
-            //find most common label overall
+            //find most common label for current value
             for (int i = 0; i < numInstances; i++)
             {
-                for (int j = 0; j < NUM_LABELS; j++)
+                if (data[i][tree[tree[branchIndex].parent].attribute] == tree[branchIndex].value)
                 {
-                    if (data[i][NUM_ATTRIBUTES] == j)
+                    for (int j = 0; j < NUM_LABELS; j++)
                     {
-                        labelCount[j]++;
+                        if (data[i][NUM_ATTRIBUTES] == j)
+                        {
+                            labelCount[j]++;
+                            printf("%d label %d\n", labelCount[j], j);
+                        }
                     }
                 }
             }
@@ -216,14 +220,18 @@ int main()
                 //If branch has no
                 if (lastLabel == -1)
                 {
-                    //find most common label overall
+                    //find most common label for current value
                     for (int i = 0; i < numInstances; i++)
                     {
-                        for (int j = 0; j < NUM_LABELS; j++)
+                        if (data[i][tree[tree[tree[branchIndex].parent].parent].attribute] == tree[tree[branchIndex].parent].value)
                         {
-                            if (data[i][NUM_ATTRIBUTES] == j)
+                            for (int j = 0; j < NUM_LABELS; j++)
                             {
-                                labelCount[j]++;
+                                if (data[i][NUM_ATTRIBUTES] == j)
+                                {
+                                    labelCount[j]++;
+                                    printf("%d label %d\n", labelCount[j], j);
+                                }
                             }
                         }
                     }
