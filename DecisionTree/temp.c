@@ -38,7 +38,14 @@ typedef struct
     int label;      //The label for this branch (-1 no label, -2 all children labelled)
 }Branch;
 
+void printTree(Branch tree[], int maxBranches);
+void decodeAttribute(int attribute);
+void decodeValue(int attribute, int value);
+void decodeLabel(int label);
+//void addTabs(int numTabs);
 int getNextID(Branch tree[], int maxBranches);
+
+
 
 int main()
 {
@@ -448,7 +455,7 @@ int main()
 
     //printf("%d  %d  %d\n", valueExists[0], valueExists[1], valueExists[2]);
 
-
+    printTree(tree, maxBranches);
 
     return 0;
 }
@@ -933,3 +940,233 @@ int getNextID(Branch tree[], int maxBranches)
     }
     return -1;
 }
+
+void printTree(Branch tree[], int maxBranches)
+{
+    int numBranches = 0;
+    for (int i = 0; i < maxBranches; i++)
+    {
+        if (tree[i].active)
+        {
+            numBranches++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    for (int i = 0; i < numBranches; i++)
+    {
+        if (i == 0)
+        {
+            printf("Branch node 0 is the head of the tree and splits on attribute ");
+            decodeAttribute(tree[i].attribute);
+            printf("\n");
+        }
+        else
+        {
+            if (tree[i].label < 0)
+            {
+                printf("Branch node %d has value ", i);
+                decodeValue(tree[tree[i].parent].attribute, tree[i].value);
+                printf(" from parent branch %d and splits on attribute ", tree[i].parent);
+                decodeAttribute(tree[i].attribute);
+                printf("\n");
+            }
+            else
+            {
+                printf("Branch node %d has value ", i);
+                decodeValue(tree[tree[i].parent].attribute, tree[i].value);
+                printf(" from parent branch %d and label ", tree[i].parent);
+                decodeLabel(tree[i].label);
+                printf("\n");
+            }
+        }
+    }
+}
+
+void decodeAttribute(int attribute)
+{
+    switch (attribute)
+    {
+        case 0:
+            printf("'outlook'");
+            break;
+        case 1:
+            printf("'temperature'");
+            break;
+        case 2:
+            printf("'humidity'");
+            break;
+        case 3:
+            printf("'wind'");
+            break;
+    }
+}
+
+void decodeValue(int attribute, int value)
+{
+    switch (attribute)
+    {
+        case 0:
+            switch (value)
+            {
+                case 0:
+                    printf("'sunny'");
+                    break;
+                case 1:
+                    printf("'overcast'");
+                    break;
+                case 2:
+                    printf("'rainy'");
+                    break;
+            }
+            break;
+        case 1:
+            switch (value)
+            {
+                case 0:
+                    printf("'hot'");
+                    break;
+                case 1:
+                    printf("'medium'");
+                    break;
+                case 2:
+                    printf("'cool'");
+                    break;
+            }
+            break;
+        case 2:
+            switch (value)
+            {
+                case 0:
+                    printf("'high'");
+                    break;
+                case 1:
+                    printf("'normal'");
+                    break;
+                case 2:
+                    printf("'low'");
+                    break;
+            }
+            break;
+        case 3:
+            switch (value)
+            {
+                case 0:
+                    printf("'strong'");
+                    break;
+                case 1:
+                    printf("'weak'");
+                    break;
+            }
+            break;
+    }
+}
+
+void decodeLabel(int label)
+{
+    switch (label)
+    {
+        case 0:
+            printf("'no'");
+            break;
+        case 1:
+            printf("'yes'");
+            break;
+    }
+}
+
+//fancy print that's not working yet
+/*
+void printTree(Branch tree[], int maxBranches)
+{
+    int numBranches = 0;
+    
+    //count number of branches
+    for (int i = 0; i < maxBranches; i++)
+    {
+        if (tree[i].active)
+        {
+            numBranches++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    bool allPrinted[numBranches];
+
+    for (int i = 0; i < numBranches; i++)
+    {
+        allPrinted[i] = false;
+    }
+
+    int branchIndex = 0;
+    int leafIndex = 0;
+    int numTabs = 0;
+
+    int numPrints = 1;
+    while (numPrints < 6)
+    {
+        //print attribute
+        //addTabs(numTabs);
+        printf("%d?", tree[branchIndex].attribute);
+        numTabs++;
+        //while next leaf exists
+        while (tree[tree[branchIndex].leaf[leafIndex]].active)
+        {    
+            //print value
+           // addTabs(numTabs);
+            printf("printing on bi: %d\n", branchIndex);
+            printf("%d: ", tree[tree[branchIndex].leaf[leafIndex]].value);
+            //if leaf is not labelled
+            if (tree[tree[branchIndex].leaf[leafIndex]].label < 0)
+            {
+                printf("not labelled\n");
+                numTabs++;
+                branchIndex = tree[branchIndex].leaf[leafIndex];
+                printf("new bi: %d\n", tree[branchIndex].leaf[leafIndex]);
+            }
+            else
+            {
+                //print label
+             //   addTabs(numTabs);
+             printf("labelled\n");
+             numPrints++;
+                printf("%d\n", tree[tree[branchIndex].leaf[leafIndex]].label);
+                leafIndex++;
+            }
+        }
+        numTabs--;
+        branchIndex = tree[branchIndex].parent;
+        leafIndex = 0;
+        allPrinted[branchIndex] = true;
+    }
+}
+
+
+numtabs=0
+while [0] not all printed
+    print attribute
+    numtabs++
+    while next leaf exists
+        print value
+        if not labelled
+            numtabs++
+        else
+            print label
+    numtabs--
+    index back to parent
+    mark parent as all printed
+
+
+void addTabs(int numTabs)
+{
+    for (int i = 0; i < numTabs; i++)
+    {
+        printf("tab");
+    }
+}*/
