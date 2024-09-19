@@ -6,13 +6,14 @@
 #include <stdbool.h>
 #include <math.h>
 
+#define NUM_I 14
 #define NUM_LABELS 2
 #define NUM_ATTRIBUTES 4
 int numValues[NUM_ATTRIBUTES] = {3, 3, 3, 2};
 //int numInstances = 0;
 #define MAX_VAL 3 
 
-int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex);
+int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex);
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
 float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
 float me_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
@@ -28,7 +29,6 @@ int getMaxDepth(void);
 
 typedef struct
 {
-   // int id;         //ID (also array index) of current branch
     bool active;    //Whether this branch slot is used by the tree
     int level;      //The depth in the tree this branch is on
     int parent;     //The ID of the parent branch
@@ -36,16 +36,15 @@ typedef struct
     int attribute;  //The attribute this branch is split on (if any)
     int value;      //The value a leaf represents when split from parent branch
     int label;      //The label for this branch (-1 no label, -2 all children labelled)
+    int currentInstances[NUM_I];
 }Branch;
 
 void printTree(Branch tree[], int maxBranches);
 void decodeAttribute(int attribute);
 void decodeValue(int attribute, int value);
 void decodeLabel(int label);
-//void addTabs(int numTabs);
+
 int getNextID(Branch tree[], int maxBranches);
-
-
 
 int main()
 {
@@ -59,13 +58,11 @@ int main()
     importData(data, numInstances);
     int method = getMethod();
     int maxDepth = getMaxDepth();
-
     int maxBranches = 0;
     for (int i = 0; i < maxDepth+1; i++)
     {
         maxBranches += (int)pow(MAX_VAL, i);
     }
-  
     Branch tree[maxBranches];
     int currentLevel = 1;
     bool allDone = false;
@@ -82,9 +79,9 @@ int main()
         tree[i].value = -1;
         tree[i].label = -1;
     }
-
     //Initialize head of tree
     int currentInstances[maxBranches][numInstances];
+    //return 0;
     for (int i = 0; i < maxBranches; i++)
     {
         for (int j = 0; j < numInstances; j++)
@@ -105,6 +102,16 @@ int main()
 
     while(!allDone)
     {
+        printf("entering loop at branchIndex: %d, parent: %d, attribute: %d, value: %d, label: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute, tree[branchIndex].value, tree[branchIndex].label);
+        if (branchIndex < 0)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d, value: %d, label: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute, tree[i].value, tree[i].label);
+            }
+            return 0;
+        }
+
         int lastLabel = -1;
         bool readyToLabel = true;
         bool allLeavesLabelled = true;
@@ -137,7 +144,6 @@ int main()
                         if (data[i][NUM_ATTRIBUTES] == j)
                         {
                             labelCount[j]++;
-                            printf("%d label %d\n", labelCount[j], j);
                         }
                     }
                 }
@@ -152,7 +158,6 @@ int main()
             }
             //Assign most common label to leaf
             tree[branchIndex].label = maxLabel;
-            printf("labelling %d as %d\n",branchIndex,maxLabel);   
 
             //Check if all leaves of parent branch are labelled
             for (int j = 0; j < numValues[tree[tree[branchIndex].parent].attribute]; j++)
@@ -160,7 +165,6 @@ int main()
                 //If not, set flag false
                 if (tree[tree[tree[branchIndex].parent].leaf[j]].label == -1)
                 {
-                    printf("numval: %d\n", numValues[tree[tree[branchIndex].parent].attribute]);
                     allLeavesLabelled = false;
                     break;
                 }
@@ -179,7 +183,6 @@ int main()
             //Check if all instances have same label
             for (int i = 0; i < numInstances; i++)
             {   
-                //printf("tcI: %d\n", currentInstances[branchIndex][i]);
                 //If current instance is in current set
                 if (currentInstances[branchIndex][i] != -1)
                 {
@@ -193,8 +196,6 @@ int main()
                         if (lastLabel != data[i][NUM_ATTRIBUTES])
                         {
                             readyToLabel = false;
-                            //printf("cI: %d\n", currentInstances[branchIndex][i]);
-                            //printf("broke because %d != %d\tdata[%d]\n", lastLabel, data[i][NUM_ATTRIBUTES], i);
                             break;
                         }
                         else
@@ -202,7 +203,6 @@ int main()
                             lastLabel = data[i][NUM_ATTRIBUTES];
                         }
                     }
-                    //printf("cI: %d, lL: %d, cL: %d, rTL: %d\n", i, lastLabel, data[i][NUM_ATTRIBUTES], readyToLabel);
                 }
             }
             //If branch is ready to label
@@ -306,7 +306,7 @@ int main()
                 else //no leaves, not ready to label, need to split
                 {
                     //Find all attributes already split in the current path
-                    int tempIndex = branchIndex;//tree[branchIndex].parent;
+                    int tempIndex = branchIndex;
                     while (tempIndex > -1)
                     {
                         if (tempIndex > 0)
@@ -318,6 +318,7 @@ int main()
                     }
                     //split
                     tree[branchIndex].attribute = splitLeaf(currentInstances[branchIndex], data, numInstances, method, parentAttribute, branchIndex);
+                    printf("splitting branch %d on attribute %d\n", branchIndex, tree[branchIndex].attribute);
                     //create leaves & assign values
                     for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                     {
@@ -352,11 +353,11 @@ int main()
     return 0;
 }
 
-int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex)
+int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex)
 {
     //Main algorithm loop
     float initialInformation;
-    float attributeGain[4];
+    float attributeGain[NUM_ATTRIBUTES];
     float bestGain = -1;
     int bestAttribute = -1;
     
@@ -366,6 +367,7 @@ int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numIns
         //IG
         case 0:
             initialInformation = ig_initial(currentInstances, data, numInstances);
+            printf("init: %f\n", initialInformation);
             break;
         //ME
         case 1:
@@ -376,7 +378,7 @@ int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numIns
             initialInformation = gini_initial(currentInstances, data, numInstances);
             break;
     }
-    //Calculate gain of splitting on each attribute, other than parent branch attribute
+    //Calculate gain of splitting on each attribute, other than parent branch attributes
     for (int i = 0; i < NUM_ATTRIBUTES; i++)
     {
         if (!parentAttribute[i])
@@ -386,6 +388,7 @@ int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numIns
                 //IG
             case 0:
                 attributeGain[i] = ig_gain(currentInstances, data, numInstances, i);
+                //printf("gain[%d]: %f\n", i, attributeGain[i]);
                 break;
             //ME
             case 1:
@@ -411,6 +414,7 @@ int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numIns
             bestGain = initialInformation - attributeGain[i];
             bestAttribute = i;
         }
+        printf("gain[%d]: %f\n", i, initialInformation - attributeGain[i]);
     }
     return bestAttribute;
 }
@@ -419,21 +423,38 @@ int splitLeaf(int currentInstances[14], int data[][NUM_ATTRIBUTES+1], int numIns
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
 {
     float totalCount = 0;
-    float yesCount = 0;
-    float noCount = 0;
+    float labelCount[NUM_LABELS];
+    float init = 0;
+    for (int i = 0; i < NUM_LABELS; i ++)
+    {
+        labelCount[i] = 0;
+    }
+
     for (int i = 0; i < numInstances; i++)
     {
         if (subset[i] != -1)
         {
             totalCount++;
-            if (dataset[i][NUM_ATTRIBUTES] == 1)
-                yesCount++;
-            else
-                noCount++;
+            for (int j = 0; j < NUM_LABELS; j++)
+            {
+                if (dataset[i][NUM_ATTRIBUTES] == j)
+                {
+                    labelCount[j]++;
+                }       
+            }
         }
     }
 
-    return -(yesCount/totalCount)*log2(yesCount/totalCount)-(noCount/totalCount)*log2(noCount/totalCount);
+    for (int i = 0; i < NUM_LABELS; i++)
+    {
+        if (labelCount[i] != 0)
+        {
+            init -= ((labelCount[i]/totalCount)*log2(labelCount[i]/totalCount));
+        }
+        printf("label: %d, lc: %f, init: %f\n", i, labelCount[i], init);
+    }
+
+    return init;
 }
 
 //Calculate weighted entropy gain for each attribute in current instance set
@@ -441,8 +462,7 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
 {
     float totalCount = 0;
     float valueCount[numValues[attribute]];
-    float yesCount[numValues[attribute]];
-    float noCount[numValues[attribute]];
+    float labelCount[numValues[attribute]][NUM_LABELS];
     float entropy[numValues[attribute]];
     float weightedEntropy = 0;
 
@@ -450,8 +470,10 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
     for (int j = 0; j < numValues[attribute]; j++)
     {
         valueCount[j] = 0;
-        yesCount[j] = 0;
-        noCount[j] = 0;
+        for (int k = 0; k < NUM_LABELS; k++)
+        {
+            labelCount[j][k] = 0;
+        }
         entropy[j] = 0;
     }
 
@@ -467,13 +489,12 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
                 {
                     valueCount[j]++;
                     totalCount++;
-                    if (dataset[i][NUM_ATTRIBUTES] == 1)
+                    for (int k = 0; k < NUM_LABELS; k++)
                     {
-                        yesCount[j]++;
-                    }
-                    else
-                    {
-                        noCount[j]++;
+                        if (dataset[i][NUM_ATTRIBUTES] == k)
+                        {
+                            labelCount[j][k]++;
+                        }
                     }
                 }
             }
@@ -484,13 +505,18 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
 
     for (int j = 0; j < numValues[attribute]; j++)
     {
-        if (yesCount[j] == 0 || noCount[j] == 0)
+        for (int k = 0; k < NUM_LABELS; k++)
         {
-            entropy[j] = 0;
-        }
-        else
-        {
-            entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
+            if (labelCount[j][k] == 0)
+            {
+                entropy[j] = 0;
+            }
+            else
+            {
+                entropy[j] -= ((labelCount[j][k]/valueCount[j])*log2(labelCount[j][k]/valueCount[j]));
+                printf("v: %d, l: %d, lc: %f, vc: %f, entropy[%d]: %f\n",j, k, labelCount[j][k], valueCount[j],j, entropy[j]);
+                //entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
+            }
         }
         weightedEntropy += valueCount[j]/totalCount*entropy[j];
     }
@@ -687,13 +713,20 @@ int countData(void)
         return -1;
     }
 
-    char row[50];
+    char row[100];
 
     //Count number of instances in input file
     while (feof(inputFile) != true)
     {
-        fgets(row, 50, inputFile);
-        count++;
+        if (fgets(row, 100, inputFile) == NULL)
+        {
+            fclose(inputFile);
+            return count;
+        }
+        else
+        {
+            count++;
+        }
     }
     fclose(inputFile);
     return count;
@@ -708,7 +741,7 @@ int importData(int data[][NUM_ATTRIBUTES+1], int numInstances)
         return -1;
     }
 
-    char row[50];
+    char row[100];
     char *token;
 
     //Parse input CSV into data instance struct array
@@ -716,12 +749,19 @@ int importData(int data[][NUM_ATTRIBUTES+1], int numInstances)
     {
         for (int i = 0; i < numInstances; i++)
         {
-            fgets(row, 50, inputFile);
-            token = strtok(row, ",");
-            for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
+            if (fgets(row, 100, inputFile) == NULL)
             {
-                data[i][j] = valueToInt(token);
-                token = strtok(NULL, ",\r\n");
+                fclose(inputFile);
+                return 0;
+            }
+            else
+            {
+                token = strtok(row, ",");
+                for (int j = 0; j < NUM_ATTRIBUTES+1; j++)
+                {
+                    data[i][j] = valueToInt(token);
+                    token = strtok(NULL, ",\r\n");
+                }
             }
         }
     }
@@ -966,96 +1006,3 @@ void decodeLabel(int label)
             break;
     }
 }
-
-//fancy print that's not working yet
-/*
-void printTree(Branch tree[], int maxBranches)
-{
-    int numBranches = 0;
-    
-    //count number of branches
-    for (int i = 0; i < maxBranches; i++)
-    {
-        if (tree[i].active)
-        {
-            numBranches++;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    bool allPrinted[numBranches];
-
-    for (int i = 0; i < numBranches; i++)
-    {
-        allPrinted[i] = false;
-    }
-
-    int branchIndex = 0;
-    int leafIndex = 0;
-    int numTabs = 0;
-
-    int numPrints = 1;
-    while (numPrints < 6)
-    {
-        //print attribute
-        //addTabs(numTabs);
-        printf("%d?", tree[branchIndex].attribute);
-        numTabs++;
-        //while next leaf exists
-        while (tree[tree[branchIndex].leaf[leafIndex]].active)
-        {    
-            //print value
-           // addTabs(numTabs);
-            printf("printing on bi: %d\n", branchIndex);
-            printf("%d: ", tree[tree[branchIndex].leaf[leafIndex]].value);
-            //if leaf is not labelled
-            if (tree[tree[branchIndex].leaf[leafIndex]].label < 0)
-            {
-                printf("not labelled\n");
-                numTabs++;
-                branchIndex = tree[branchIndex].leaf[leafIndex];
-                printf("new bi: %d\n", tree[branchIndex].leaf[leafIndex]);
-            }
-            else
-            {
-                //print label
-             //   addTabs(numTabs);
-             printf("labelled\n");
-             numPrints++;
-                printf("%d\n", tree[tree[branchIndex].leaf[leafIndex]].label);
-                leafIndex++;
-            }
-        }
-        numTabs--;
-        branchIndex = tree[branchIndex].parent;
-        leafIndex = 0;
-        allPrinted[branchIndex] = true;
-    }
-}
-
-
-numtabs=0
-while [0] not all printed
-    print attribute
-    numtabs++
-    while next leaf exists
-        print value
-        if not labelled
-            numtabs++
-        else
-            print label
-    numtabs--
-    index back to parent
-    mark parent as all printed
-
-
-void addTabs(int numTabs)
-{
-    for (int i = 0; i < numTabs; i++)
-    {
-        printf("tab");
-    }
-}*/
