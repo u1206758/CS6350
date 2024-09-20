@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <math.h>
 
-#define NUM_I 728
+#define NUM_I 1000
 #define NUM_LABELS 4
 #define NUM_ATTRIBUTES 6
 int numValues[NUM_ATTRIBUTES] = {4, 4, 4, 3, 3, 3};
@@ -99,13 +99,24 @@ int main()
     int branchIndex = 0;
     tree[0].active = true;
     tree[0].level = 1;
-
+    int history[11] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
     while(!allDone)
     {
+        history[0] = history[1];
+        history[1] = history[2];
+        history[2] = history[3];
+        history[3] = history[4];
+        history[4] = history[5];
+        history[5] = history[6];
+        history[6] = history[7];
+        history[7] = history[8];
+        history[8] = history[9];
+        history[9] = history[10];
+        history[10] = branchIndex;
         printf("entering loop at branchIndex: %d, parent: %d, attribute: %d, value: %d, label: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute, tree[branchIndex].value, tree[branchIndex].label);
-        if (branchIndex < 0)
+        if (history[0] == history[2] && history[2] == history[4] && history[4] == history[6] && history[6] == history[8] && history[8] == history[10] && history[0] != -1)
         {
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 15; i++)
             {
                 printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d, value: %d, label: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute, tree[i].value, tree[i].label);
             }
@@ -158,6 +169,7 @@ int main()
             }
             //Assign most common label to leaf
             tree[branchIndex].label = maxLabel;
+            printf("max level at branch %d assign %d\n", branchIndex, maxLabel);
 
             //Check if all leaves of parent branch are labelled
             for (int j = 0; j < numValues[tree[tree[branchIndex].parent].attribute]; j++)
@@ -166,6 +178,7 @@ int main()
                 if (tree[tree[tree[branchIndex].parent].leaf[j]].label == -1)
                 {
                     allLeavesLabelled = false;
+                    printf("\\*/leaf %d of branch %d is not labelled   b: %d, l: %d\n", j, branchIndex, tree[branchIndex].leaf[j], tree[tree[branchIndex].leaf[j]].label);
                     break;
                 }
             }                 
@@ -173,6 +186,7 @@ int main()
             if (allLeavesLabelled)
             {
                 tree[tree[branchIndex].parent].label = -2;  //mark current branch as having all leaves labelled
+                printf("---all leaves of branch %d are labelled\n", tree[branchIndex].parent);
             }
 
             //set index to parent
@@ -238,6 +252,7 @@ int main()
                     lastLabel = maxLabel;
                 }
                 tree[branchIndex].label = lastLabel;
+                printf("all same on branch %d label %d\n", branchIndex, lastLabel);
                 //If index at head, all done, else set index to parent
                 if (branchIndex == 0)
                 {
@@ -256,6 +271,7 @@ int main()
                     {
                         allLeavesLabelled = false;
                         branchIndex = tree[branchIndex].leaf[j];
+                        printf("/*\\leaf %d of branch %d is not labelled   b: %d, l: %d\n", j, branchIndex, tree[branchIndex].leaf[j], tree[tree[branchIndex].leaf[j]].label);
                         break;
                     }
                 }                 
@@ -263,6 +279,7 @@ int main()
                 if (allLeavesLabelled)
                 {
                     tree[branchIndex].label = -2;  //mark current branch as having all leaves labelled
+                    printf("****all leaves of branch %d are labelled", branchIndex);
                     branchIndex = tree[branchIndex].parent;
                 }
             }   
@@ -283,9 +300,15 @@ int main()
                     for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                     {
                         //if all are not labelled, set index to next unlabeleld
+                        if (tree[tree[branchIndex].leaf[i]].label == -2)
+                            printf("\nWTF\n\n");
+                        else
+                            printf("\n%d\n\n", tree[tree[branchIndex].leaf[i]].label);
                         if (tree[tree[branchIndex].leaf[i]].label == -1)
                         {
                             allLeavesLabelled = false;
+                            printf("*X*leaf %d of branch %d is not labelled   b: %d, l: %d\n", i, branchIndex, tree[branchIndex].leaf[i], tree[tree[branchIndex].leaf[i]].label);
+                            printf("%d\n", tree[tree[branchIndex].leaf[i]].label);
                             branchIndex = tree[branchIndex].leaf[i];
                             break;
                         }
@@ -299,6 +322,8 @@ int main()
                         }
                         else // set index back to parent
                         {
+                            printf("all leaves of branch %d are labelled DUMBASS\n", branchIndex);
+                            tree[branchIndex].label = -2;
                             branchIndex = tree[branchIndex].parent;
                         }
                     }
@@ -367,7 +392,7 @@ int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int num
         //IG
         case 0:
             initialInformation = ig_initial(currentInstances, data, numInstances);
-            printf("init: %f\n", initialInformation);
+            //printf("init: %f\n", initialInformation);
             break;
         //ME
         case 1:
@@ -388,7 +413,7 @@ int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int num
                 //IG
             case 0:
                 attributeGain[i] = ig_gain(currentInstances, data, numInstances, i);
-                printf("gain[%d]: %f\n", i, attributeGain[i]);
+                //printf("gain[%d]: %f\n", i, attributeGain[i]);
                 break;
             //ME
             case 1:
@@ -402,7 +427,7 @@ int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int num
         }
         else
         {
-            attributeGain[i] = 1;
+            attributeGain[i] = 10;
         }
     }
     
@@ -414,6 +439,7 @@ int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int num
             bestGain = initialInformation - attributeGain[i];
             bestAttribute = i;
         }
+        //printf("gain[%d]: %f\n", i, initialInformation - attributeGain[i]);
     }
     return bestAttribute;
 }
@@ -449,8 +475,9 @@ float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances
         if (labelCount[i] != 0)
         {
             init -= ((labelCount[i]/totalCount)*log2(labelCount[i]/totalCount));
+            //printf("entat %d: %f\n",i, (labelCount[i]/totalCount)*log2(labelCount[i]/totalCount));
         }
-        printf("label: %d, lc: %f, init: %f\n", i, labelCount[i], init);
+       // printf("label: %d, lc: %f, tc: %f, init: %f\n", i, labelCount[i], totalCount, init);
     }
 
     return init;
@@ -490,7 +517,7 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
                     totalCount++;
                     for (int k = 0; k < NUM_LABELS; k++)
                     {
-                        if (dataset[i][NUM_ATTRIBUTES] == labelCount[j][k])
+                        if (dataset[i][NUM_ATTRIBUTES] == k)
                         {
                             labelCount[j][k]++;
                         }
@@ -513,6 +540,7 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
             else
             {
                 entropy[j] -= ((labelCount[j][k]/valueCount[j])*log2(labelCount[j][k]/valueCount[j]));
+                //printf("v: %d, l: %d, lc: %f, vc: %f, entropy[%d]: %f\n",j, k, labelCount[j][k], valueCount[j],j, entropy[j]);
                 //entropy[j] = -(yesCount[j]/valueCount[j])*log2(yesCount[j]/valueCount[j])-(noCount[j]/valueCount[j])*log2(noCount[j]/valueCount[j]);
             }
         }
@@ -704,7 +732,7 @@ int countData(void)
      int count = 0;
 
     //Open input file
-    FILE *inputFile = fopen("test.csv", "r");
+    FILE *inputFile = fopen("train.csv", "r");
     if (inputFile == NULL)
     {
         printf("Error opening file");
@@ -732,7 +760,7 @@ int countData(void)
 
 int importData(int data[][NUM_ATTRIBUTES+1], int numInstances)
 {
-    FILE *inputFile = fopen("test.csv", "r");
+    FILE *inputFile = fopen("train.csv", "r");
     if (inputFile == NULL)
     {
         printf("Error opening file");
