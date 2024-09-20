@@ -3,15 +3,12 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define NUM_ATTRIBUTES 4
-#define MAX_VAL 3 
-
-#define DATA_FILE "tennis.csv"
-#define TREE_FILE "tennis_tree.csv"
+#define NUM_ATTRIBUTES 6
+#define MAX_VAL 4 
 
 int countEntries(char fileName[]);
 int importData(char fileName[], int data[][NUM_ATTRIBUTES+1], int numInstances, int numAttributes);
-int importTree(char fileName[], int tree[][8], int numInstances, int numAttributes);
+int importTree(char fileName[], int tree[][9], int numInstances, int numAttributes);
 int valueToInt(char* value, int attribute);
 
 typedef struct
@@ -26,14 +23,19 @@ typedef struct
 
 int main()
 {
+    //Get input file names
+    char userInput[50];
+    printf("Enter data file name: \n\n");
+    scanf(" %s", userInput);
+    printf("\n");
     //Import data from CSV
-    int numInstances = countEntries(DATA_FILE);
+    int numInstances = countEntries(userInput);
     if (numInstances == -1)
     {
         return 1;
     }
     int data[numInstances][NUM_ATTRIBUTES+1];
-    importData(DATA_FILE, data, numInstances, NUM_ATTRIBUTES+1);
+    importData(userInput, data, numInstances, NUM_ATTRIBUTES+1);
     int dataLabels[numInstances];
     int myLabels[numInstances];
     //Set up label arrays for error calculations
@@ -44,10 +46,17 @@ int main()
     }
 
     //Import tree from CSV
-    int numBranches = countEntries(TREE_FILE);
-    int tempTree[numBranches][8];
+    printf("Enter tree file name: \n\n");
+    scanf(" %s", userInput);
+    printf("\n");
+    int numBranches = countEntries(userInput);
+    if (numBranches == -1)
+    {
+        return 1;
+    }
+    int tempTree[numBranches][9];
     Branch tree[numBranches];
-    importTree(TREE_FILE, tempTree, numBranches, 8);
+    importTree(userInput, tempTree, numBranches, 9);
     for (int i = 0; i < numBranches; i++)
     {
         tree[i].id = tempTree[i][0];
@@ -67,6 +76,7 @@ int main()
     //For each instance in dataset
     while (instanceIndex < numInstances)
     {   
+        printf("loop instance %d\n", instanceIndex);
         //If the current branch in the tree has a label, assign that label to that instance
         if (tree[branchIndex].label > -1)
         {
@@ -116,7 +126,7 @@ int countEntries(char fileName[])
     FILE *inputFile = fopen(fileName, "r");
     if (inputFile == NULL)
     {
-        printf("Error opening file");
+        printf("Error opening file: %s\n", fileName);
         return -1;
     }
 
@@ -144,7 +154,7 @@ int importData(char fileName[], int data[][NUM_ATTRIBUTES+1], int numInstances, 
     FILE *inputFile = fopen(fileName, "r");
     if (inputFile == NULL)
     {
-        printf("Error opening file");
+        printf("Error opening file: %s\n", fileName);
         return -1;
     }
 
@@ -166,7 +176,7 @@ int importData(char fileName[], int data[][NUM_ATTRIBUTES+1], int numInstances, 
                 token = strtok(row, ",");
                 for (int j = 0; j < numAttributes; j++)
                 {
-                    data[i][j] = valueToInt(token, 0);
+                    data[i][j] = valueToInt(token, j);
                     token = strtok(NULL, ",\r\n");
                 }
             }
@@ -176,12 +186,12 @@ int importData(char fileName[], int data[][NUM_ATTRIBUTES+1], int numInstances, 
     return 0;
 }
 
-int importTree(char fileName[], int tree[][8], int numInstances, int numAttributes)
+int importTree(char fileName[], int tree[][9], int numInstances, int numAttributes)
 {
     FILE *inputFile = fopen(fileName, "r");
     if (inputFile == NULL)
     {
-        printf("Error opening file");
+        printf("Error opening file: %s\n", fileName);
         return -1;
     }
 
@@ -221,35 +231,118 @@ int valueToInt(char* value, int attribute)
     if (attribute == -1)
     {
         return atoi(value);
+        if ((char )value[0] == '-')
+        {
+            dec = -1 * ((char) value[1] - 48);
+        }
+        else
+        {
+            dec = (char) value[0] - 48;
+        }
+        return dec;
     }
 
-    /*
-        data[inst][0] - outlook
-            sunny - 0
-            overcast - 1
-            rainy - 2
-        data[]inst[1] - temperature
-            hot - 0
-            medium - 1
-            cool - 2
-        data[inst][2] - humidity
-            high - 0
-            normal - 1
-            low - 2
-        data[inst][3] - wind
-            strong - 0
-            weak - 1
-        data[inst][4] - play
-            no - 0
-            yes - 1
-    */   
+       /*
+        data[inst][0] - buying
+            vhigh - 0
+            high - 1
+            med - 2
+            low - 3
+        data[]inst[1] - maint
+            vhigh - 0
+            high - 1
+            med - 2
+            low - 3
+        data[inst][2] - doors
+            2 - 0
+            3 - 1
+            4 - 2
+            5more - 3
+        data[inst][3] - persons
+            2 - 0
+            4 - 1
+            more - 2
+        data[inst][4] - lug_boot
+            small - 0
+            med - 1
+            big - 2
+        data[inst][5] - safety
+            low - 0
+            med - 1
+            high - 2
+        data[inst][6] - label
+            unacc - 0
+            acc - 1
+            good - 2
+            vgood - 3
+    */
 
-    if (!strcmp(value, "sunny") || !strcmp(value, "hot") || !strcmp(value, "high") || !strcmp(value, "strong") || !strcmp(value, "no"))
-        return 0;
-    else if (!strcmp(value, "overcast") || !strcmp(value, "medium") || !strcmp(value, "normal") || !strcmp(value, "weak") || !strcmp(value, "yes"))
-        return 1;
-    else if (!strcmp(value, "rainy") || !strcmp(value, "cool") || !strcmp(value, "low"))
-        return 2;
-    else
-        return -1;
+   switch (attribute)
+   {
+        case 0:
+            if (!strcmp(value, "vhigh"))
+                return 0;
+            else if (!strcmp(value, "high"))
+                return 1;
+            else if (!strcmp(value, "med"))
+                return 2;
+            else if (!strcmp(value, "low"))
+                return 3;
+            break;
+        case 1:
+            if (!strcmp(value, "vhigh"))
+                return 0;
+            else if (!strcmp(value, "high"))
+                return 1;
+            else if (!strcmp(value, "med"))
+                return 2;
+            else if (!strcmp(value, "low"))
+                return 3;
+            break;
+        case 2:
+            if (!strcmp(value, "2"))
+                return 0;
+            else if (!strcmp(value, "3"))
+                return 1;
+            else if (!strcmp(value, "4"))
+                return 2;
+            else if (!strcmp(value, "5more"))
+                return 3;
+            break;
+        case 3:
+            if (!strcmp(value, "2"))
+                return 0;
+            else if (!strcmp(value, "4"))
+                return 1;
+            else if (!strcmp(value, "more"))
+                return 2;
+            break;
+        case 4:
+            if (!strcmp(value, "small"))
+                return 0;
+            else if (!strcmp(value, "med"))
+                return 1;
+            else if (!strcmp(value, "big"))
+                return 2;
+            break;
+        case 5:
+            if (!strcmp(value, "low"))
+                return 0;
+            else if (!strcmp(value, "med"))
+                return 1;
+            else if (!strcmp(value, "high"))
+                return 2;
+            break;
+        case 6:
+            if (!strcmp(value, "unacc"))
+                return 0;
+            else if (!strcmp(value, "acc"))
+                return 1;
+            else if (!strcmp(value, "good"))
+                return 2;
+            else if (!strcmp(value, "vgood"))
+                return 3;
+            break;
+   }
+   return -1;
 }

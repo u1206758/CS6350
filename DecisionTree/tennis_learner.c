@@ -1056,11 +1056,10 @@ void decodeLabel(int label)
 
 void exportTree(Branch tree[], int maxBranches)
 {
-    printf("Enter name of .CSV file to export tree to:\n");
+    printf("Enter name of .CSV file to export tree to:\n\n");
     char name[50];
     scanf("%s", name);
     strcat(name, ".csv");
-    printf("name: %s\n", name);
     FILE *outputFile = fopen(name, "w");
     if (outputFile == NULL)
     {
