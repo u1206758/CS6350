@@ -78,21 +78,7 @@ int main()
     }
     //Initialize head of tree
     short currentInstances[maxBranches][numInstances];
-    /*short **currentInstances = (short **)malloc(maxBranches * sizeof(short *));
-    if (currentInstances == NULL)
-    {
-        printf("malloc fail first\n");
-        return 1;
-    }
-    for (int i = 0; i < maxBranches; i++)
-    {
-        currentInstances[i] = (short *)malloc(numInstances * sizeof(short));
-        if (currentInstances[i] == NULL)
-        {
-            printf("malloc fail at row %d\n", i);
-            return 1;
-        }
-    }*/
+
     for (int i = 0; i < maxBranches; i++)
     {
         for (int j = 0; j < numInstances; j++)
@@ -156,6 +142,37 @@ int main()
                     maxLabel = i;
                 }
             }
+            //If branch value has no instances
+            if (maxLabel == -1)
+            {
+                for (int i = 0; i < NUM_LABELS; i++)
+                {
+                    labelCount[i] = 0;
+                }
+                maxLabelCount = 0;
+                //find most common label for current value
+                for (int i = 0; i < numInstances; i++)
+                {
+                    if (data[i][tree[tree[tree[branchIndex].parent].parent].attribute] == tree[tree[branchIndex].parent].value)
+                    {
+                        for (int j = 0; j < NUM_LABELS; j++)
+                        {
+                            if (data[i][NUM_ATTRIBUTES] == j)
+                            {
+                                labelCount[j]++;
+                            }
+                        }
+                    }
+                }
+                for (int i = 0; i < NUM_LABELS; i++)
+                {
+                    if (labelCount[i] > maxLabelCount)
+                    {
+                        maxLabelCount = labelCount[i];
+                        maxLabel = i;
+                    }
+                }
+            }
             //Assign most common label to leaf
             tree[branchIndex].label = maxLabel;
 
@@ -209,7 +226,7 @@ int main()
             if (readyToLabel)
             {
                 //Label branch
-                //If branch has no
+                //If branch value has no instances
                 if (lastLabel == -1)
                 {
                     //find most common label for current value
