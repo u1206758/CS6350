@@ -76,7 +76,6 @@ int main()
     //For each instance in dataset
     while (instanceIndex < numInstances)
     {   
-        printf("loop instance %d\n", instanceIndex);
         //If the current branch in the tree has a label, assign that label to that instance
         if (tree[branchIndex].label > -1)
         {
@@ -98,10 +97,17 @@ int main()
             
         }
     }
-    printf("Real Label -- Predicted Label\n");
-    for (int i = 0; i < numInstances; i++)
+    char ans;
+    printf("Print labels in terminal? (Y/N)\n\n");
+    scanf(" %c", &ans);
+    printf("\n");
+    if (ans == 'Y')
     {
-        printf("\t%d  --  %d\n", dataLabels[i], myLabels[i]);
+        printf("Real Label -- Predicted Label\n");
+        for (int i = 0; i < numInstances; i++)
+        {
+            printf("\t%d  --  %d\n", dataLabels[i], myLabels[i]);
+        }
     }
 
     int incorrectPredictions = 0;
@@ -113,8 +119,8 @@ int main()
         }
     }
 
-    printf("%d incorrect predictions on %d instances\n", incorrectPredictions, numInstances);
-    printf("prediction error: %.2f%% \n", ((float) incorrectPredictions / (float) numInstances)*100);
+    printf("\n%d incorrect predictions on %d instances\n", incorrectPredictions, numInstances);
+    printf("prediction error: %.2f%% \n\n", ((float) incorrectPredictions / (float) numInstances)*100);
 
 }
 

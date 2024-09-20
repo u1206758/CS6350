@@ -370,8 +370,14 @@ int main()
             }
         }
     }
-
-    printTree(tree, maxBranches);
+    char ans;
+    printf("Print tree in terminal? (Y/N)\n\n");
+    scanf(" %c", &ans);
+    printf("\n");
+    if (ans == 'Y')
+    {
+        printTree(tree, maxBranches);
+    }
     exportTree(tree, maxBranches);
     return 0;
 }
@@ -1182,10 +1188,9 @@ void decodeLabel(int label)
 
 void exportTree(Branch tree[], int maxBranches)
 {
-    printf("Enter name of .CSV file to export tree to:\n\n");
+    printf("\nEnter name of file to export tree to:\n\n");
     char name[50];
     scanf("%s", name);
-    strcat(name, ".csv");
     FILE *outputFile = fopen(name, "w");
     if (outputFile == NULL)
     {
