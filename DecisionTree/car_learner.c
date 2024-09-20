@@ -12,6 +12,7 @@
 int numValues[NUM_ATTRIBUTES] = {4, 4, 4, 3, 3, 3};
 //int numInstances = 0;
 #define MAX_VAL 4 
+#define MAX_BRANCH 1000
 
 int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex);
 float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
@@ -58,11 +59,11 @@ int main()
     importData(data, numInstances);
     int method = getMethod();
     int maxDepth = getMaxDepth();
-    int maxBranches = 0;
-    for (int i = 0; i < maxDepth+1; i++)
-    {
-        maxBranches += (int)pow(MAX_VAL, i);
-    }
+    int maxBranches = MAX_BRANCH;
+    //for (int i = 0; i < maxDepth+1; i++)
+    //{
+    //    maxBranches += (int)pow(MAX_VAL, i);
+    //}
     Branch tree[maxBranches];
     int currentLevel = 1;
     bool allDone = false;
@@ -348,6 +349,11 @@ int main()
                     for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                     {
                         tree[branchIndex].leaf[i] = getNextID(tree, maxBranches);
+                        if (tree[branchIndex].leaf[i] == -1)
+                        {
+                            printf("out of branches!\n");
+                            return 1;
+                        }
                         tree[tree[branchIndex].leaf[i]].active = true;
                         tree[tree[branchIndex].leaf[i]].value = i;
                         tree[tree[branchIndex].leaf[i]].parent = branchIndex;
