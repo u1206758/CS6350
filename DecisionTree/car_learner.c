@@ -11,7 +11,6 @@
 #define NUM_LABELS 4
 #define NUM_ATTRIBUTES 6
 int numValues[NUM_ATTRIBUTES] = {4, 4, 4, 3, 3, 3};
-//int numInstances = 0;
 #define MAX_VAL 4 
 #define MAX_BRANCH 1000
 
@@ -111,30 +110,8 @@ int main()
     int branchIndex = 0;
     tree[0].active = true;
     tree[0].level = 1;
-    //int history[11] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
     while(!allDone)
     {
-        /*history[0] = history[1];
-        history[1] = history[2];
-        history[2] = history[3];
-        history[3] = history[4];
-        history[4] = history[5];
-        history[5] = history[6];
-        history[6] = history[7];
-        history[7] = history[8];
-        history[8] = history[9];
-        history[9] = history[10];
-        history[10] = branchIndex;*/
-        //printf("entering loop at branchIndex: %d, parent: %d, attribute: %d, value: %d, label: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute, tree[branchIndex].value, tree[branchIndex].label);
-       /* if (history[0] == history[2] && history[2] == history[4] && history[4] == history[6] && history[6] == history[8] && history[8] == history[10] && history[0] != -1)
-        {
-            for (int i = 0; i < 15; i++)
-            {
-                printf("branch[%d] - active: %d, parent: %d, level: %d, attribute: %d, value: %d, label: %d\n", i, tree[i].active, tree[i].parent, tree[i].level, tree[i].attribute, tree[i].value, tree[i].label);
-            }
-            return 0;
-        }*/
-
         int lastLabel = -1;
         bool readyToLabel = true;
         bool allLeavesLabelled = true;
@@ -378,13 +355,6 @@ int main()
     }
 
     printTree(tree, maxBranches);
-
-    /*for (int i = 0; i < numInstances; i++)
-    {
-        free(currentInstances[i]);
-    }
-    free(currentInstances);
-*/
     return 0;
 }
 
@@ -593,8 +563,6 @@ float me_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances,
     float totalCount = 0;
     float valueCount[numValues[attribute]];
     float labelCount[numValues[attribute]][NUM_LABELS];
-    float yesCount[numValues[attribute]];
-    float noCount[numValues[attribute]];
     float me[numValues[attribute]];
     float weightedme = 0;
 
