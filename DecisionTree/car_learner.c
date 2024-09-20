@@ -37,7 +37,6 @@ typedef struct
     int attribute;  //The attribute this branch is split on (if any)
     int value;      //The value a leaf represents when split from parent branch
     int label;      //The label for this branch (-1 no label, -2 all children labelled)
-    int currentInstances[NUM_I];
 }Branch;
 
 void printTree(Branch tree[], int maxBranches);

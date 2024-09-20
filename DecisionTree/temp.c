@@ -37,13 +37,13 @@ typedef struct
     int attribute;  //The attribute this branch is split on (if any)
     int value;      //The value a leaf represents when split from parent branch
     int label;      //The label for this branch (-1 no label, -2 all children labelled)
-    int currentInstances[NUM_I];
 }Branch;
 
 void printTree(Branch tree[], int maxBranches);
 void decodeAttribute(int attribute);
 void decodeValue(int attribute, int value);
 void decodeLabel(int label);
+void exportTree(Branch tree[], int maxBranches);
 
 int getNextID(Branch tree[], int maxBranches);
 
@@ -372,6 +372,7 @@ int main()
     }
 
     printTree(tree, maxBranches);
+    exportTree(tree, maxBranches);
     return 0;
 }
 
@@ -1051,4 +1052,39 @@ void decodeLabel(int label)
             printf("'yes'");
             break;
     }
+}
+
+void exportTree(Branch tree[], int maxBranches)
+{
+    printf("Enter name of .CSV file to export tree to:\n");
+    char name[50];
+    scanf("%s", name);
+    strcat(name, ".csv");
+    printf("name: %s\n", name);
+    FILE *outputFile = fopen(name, "w");
+    if (outputFile == NULL)
+    {
+        printf("Error opening file");
+        return;
+    }
+
+    for (int i = 0; i < maxBranches; i++)
+    {
+        if (tree[i].active)
+        {
+            fprintf(outputFile, "%d,%d,%d,%d,%d", i, tree[i].attribute, tree[i].value, tree[i].label, tree[i].parent);
+            for (int j = 0; j < MAX_VAL; j++)
+            {
+                fprintf(outputFile, ",%d", tree[i].leaf[j]);
+            }
+            fprintf(outputFile, "\n");
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    fclose(outputFile);
+    return;
 }
