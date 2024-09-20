@@ -13,7 +13,7 @@
 int numValues[NUM_ATTRIBUTES] = {4, 4, 4, 3, 3, 3};
 //int numInstances = 0;
 #define MAX_VAL 4 
-#define MAX_BRANCH 1300
+#define MAX_BRANCH 1000
 
 int splitLeaf(short currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex);
 float ig_initial(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
@@ -623,7 +623,7 @@ float me_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances,
                     totalCount++;
                     for (int k = 0; k < NUM_LABELS; k++)
                     {
-                        if (dataset[i][NUM_ATTRIBUTES] == labelCount[j][k])
+                        if (dataset[i][NUM_ATTRIBUTES] == k)
                         {
                             labelCount[j][k]++;
                         }
@@ -665,21 +665,33 @@ float me_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances,
 float gini_initial(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
 {
     float totalCount = 0;
-    float yesCount = 0;
-    float noCount = 0;
+    float labelCount[NUM_LABELS];
+    float gini = 0;
+    for (int i = 0; i < NUM_LABELS; i++)
+    {
+        labelCount[i] = 0;
+    }
     for (int i = 0; i < numInstances; i++)
     {
         if (subset[i] != -1)
         {
             totalCount++;
-            if (dataset[i][NUM_ATTRIBUTES] == 1)
-                yesCount++;
-            else
-                noCount++;
+            for (int j = 0; j < NUM_LABELS; j++)
+            {
+                if (dataset[i][NUM_ATTRIBUTES] == j)
+                {
+                    labelCount[j]++;
+                }
+            }
         }
     }
 
-    return 1 - ((yesCount/totalCount)*(yesCount/totalCount) + (noCount/totalCount)*(noCount/totalCount));
+    for (int i = 0; i < NUM_LABELS; i++)
+    {
+        gini += (labelCount[i]/totalCount) * (labelCount[i]/totalCount);
+    }
+
+    return 1 - gini;
 }
 
 //Calculate weighted gini gain for each attribute in current instance set
@@ -687,8 +699,8 @@ float gini_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstance
 {
     float totalCount = 0;
     float valueCount[numValues[attribute]];
-    float yesCount[numValues[attribute]];
-    float noCount[numValues[attribute]];
+    float labelCount[numValues[attribute]][NUM_LABELS];
+    float giniIntermediate[numValues[attribute]];
     float gini[numValues[attribute]];
     float weightedGini = 0;
 
@@ -696,8 +708,11 @@ float gini_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstance
     for (int j = 0; j < numValues[attribute]; j++)
     {
         valueCount[j] = 0;
-        yesCount[j] = 0;
-        noCount[j] = 0;
+        for (int k = 0; k < NUM_LABELS; k++)
+        {
+            labelCount[j][k] = 0;
+        }
+        giniIntermediate[j] = 0;
         gini[j] = 0;
     }
 
@@ -709,14 +724,18 @@ float gini_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstance
             //count values for each attribute and their label
             for (int j = 0; j < numValues[attribute]; j++)
             {
+
                 if (dataset[i][attribute] == j)
                 {
                     valueCount[j]++;
                     totalCount++;
-                    if (dataset[i][NUM_ATTRIBUTES] == 1)
-                        yesCount[j]++;
-                    else
-                        noCount[j]++;
+                    for (int k = 0; k < NUM_LABELS; k++)
+                    {
+                        if (dataset[i][NUM_ATTRIBUTES] == k)
+                        {
+                            labelCount[j][k]++;
+                        }                     
+                    }
                 }
             }
         }
@@ -732,7 +751,11 @@ float gini_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstance
         }
         else
         {
-            gini[j] = 1 - ((yesCount[j]/valueCount[j])*(yesCount[j]/valueCount[j]) + (noCount[j]/valueCount[j])*(noCount[j]/valueCount[j]));
+            for (int k = 0; k < NUM_LABELS; k++)
+            {
+                giniIntermediate[j] += (labelCount[j][k]/valueCount[j]) * (labelCount[j][k]/valueCount[j]);
+            }
+            gini[j] = 1 - giniIntermediate[j];
         }
         weightedGini += valueCount[j]/totalCount*gini[j];
     }
