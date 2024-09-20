@@ -1,6 +1,7 @@
 //This program implements a decision tree learning algorithm for the car evaluation task in HW1 part 2 problem 2.
 //Users can select information gain, majority error, or gini index, and optionally set a maximum depth from 1 to 6.
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -12,15 +13,15 @@
 int numValues[NUM_ATTRIBUTES] = {4, 4, 4, 3, 3, 3};
 //int numInstances = 0;
 #define MAX_VAL 4 
-#define MAX_BRANCH 1000
+#define MAX_BRANCH 1300
 
-int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex);
-float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
-float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
-float me_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
-float me_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
-float gini_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
-float gini_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
+int splitLeaf(short currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex);
+float ig_initial(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
+float ig_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
+float me_initial(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
+float me_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
+float gini_initial(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances);
+float gini_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute);
 
 int countData(void);
 int importData(int data[][NUM_ATTRIBUTES+1], int numInstances);
@@ -77,8 +78,22 @@ int main()
         tree[i].label = -1;
     }
     //Initialize head of tree
-    int currentInstances[maxBranches][numInstances];
-    //return 0;
+    short currentInstances[maxBranches][numInstances];
+    /*short **currentInstances = (short **)malloc(maxBranches * sizeof(short *));
+    if (currentInstances == NULL)
+    {
+        printf("malloc fail first\n");
+        return 1;
+    }
+    for (int i = 0; i < maxBranches; i++)
+    {
+        currentInstances[i] = (short *)malloc(numInstances * sizeof(short));
+        if (currentInstances[i] == NULL)
+        {
+            printf("malloc fail at row %d\n", i);
+            return 1;
+        }
+    }*/
     for (int i = 0; i < maxBranches; i++)
     {
         for (int j = 0; j < numInstances; j++)
@@ -110,8 +125,8 @@ int main()
         history[8] = history[9];
         history[9] = history[10];
         history[10] = branchIndex;*/
-        /*printf("entering loop at branchIndex: %d, parent: %d, attribute: %d, value: %d, label: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute, tree[branchIndex].value, tree[branchIndex].label);
-        if (history[0] == history[2] && history[2] == history[4] && history[4] == history[6] && history[6] == history[8] && history[8] == history[10] && history[0] != -1)
+        //printf("entering loop at branchIndex: %d, parent: %d, attribute: %d, value: %d, label: %d\n",branchIndex, tree[branchIndex].parent, tree[branchIndex].attribute, tree[branchIndex].value, tree[branchIndex].label);
+       /* if (history[0] == history[2] && history[2] == history[4] && history[4] == history[6] && history[6] == history[8] && history[8] == history[10] && history[0] != -1)
         {
             for (int i = 0; i < 15; i++)
             {
@@ -334,6 +349,7 @@ int main()
                         if (tree[branchIndex].leaf[i] == -1)
                         {
                             printf("ERROR: out of branches!\n");
+                            printf("%d\n", branchIndex);
                             return 1;
                         }
                         tree[tree[branchIndex].leaf[i]].active = true;
@@ -363,10 +379,16 @@ int main()
 
     printTree(tree, maxBranches);
 
+    /*for (int i = 0; i < numInstances; i++)
+    {
+        free(currentInstances[i]);
+    }
+    free(currentInstances);
+*/
     return 0;
 }
 
-int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex)
+int splitLeaf(short currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int numInstances, int method, bool parentAttribute[NUM_ATTRIBUTES], int branchIndex)
 {
     //Main algorithm loop
     float initialInformation;
@@ -429,7 +451,7 @@ int splitLeaf(int currentInstances[NUM_I], int data[][NUM_ATTRIBUTES+1], int num
 }
 
 //Calculate entropy on labels for current set of instances
-float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
+float ig_initial(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
 {
     float totalCount = 0;
     float labelCount[NUM_LABELS];
@@ -466,7 +488,7 @@ float ig_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances
 }
 
 //Calculate weighted entropy gain for each attribute in current instance set
-float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
+float ig_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
 {
     float totalCount = 0;
     float valueCount[numValues[attribute]];
@@ -530,42 +552,47 @@ float ig_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
 }
 
 //Calculate majority error on labels for current set of instances
-float me_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
+float me_initial(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
 {
     float totalCount = 0;
-    float yesCount = 0;
-    float noCount = 0;
+    float labelCount[NUM_LABELS];
+    for (int i = 0; i < NUM_LABELS; i++)
+    {
+        labelCount[i] = 0;
+    }
     for (int i = 0; i < numInstances; i++)
     {
         if (subset[i] != -1)
         {
             totalCount++;
-            if (dataset[i][NUM_ATTRIBUTES] == 1)
+            for (int j = 0; j < NUM_LABELS; j++)
             {
-                yesCount++;
+                if (dataset[i][NUM_ATTRIBUTES] == j)
+            {
+                labelCount[j]++;
             }
-            else
-            {
-                noCount++;
             }
         }
     }
 
-    if (yesCount >= noCount)
+    float max = -1;
+
+    for (int j = 0; j < NUM_LABELS; j++)
     {
-        return 1 - (yesCount/totalCount);
+        if (labelCount[j] > max)
+        {
+            max = labelCount[j];
+        }
     }
-    else
-    {
-        return 1 - (noCount/totalCount);
-    }
+    return 1 - (max/totalCount);
 }
 
 //Calculate weighted majority error gain for each attribute in current instance set
-float me_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
+float me_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
 {
     float totalCount = 0;
     float valueCount[numValues[attribute]];
+    float labelCount[numValues[attribute]][NUM_LABELS];
     float yesCount[numValues[attribute]];
     float noCount[numValues[attribute]];
     float me[numValues[attribute]];
@@ -575,8 +602,10 @@ float me_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
     for (int j = 0; j < numValues[attribute]; j++)
     {
         valueCount[j] = 0;
-        yesCount[j] = 0;
-        noCount[j] = 0;
+        for (int k = 0; k < NUM_LABELS; k++)
+        {
+            labelCount[j][k] = 0;
+        }
         me[j] = 0;
     }
 
@@ -592,20 +621,23 @@ float me_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
                 {
                     valueCount[j]++;
                     totalCount++;
-                    if (dataset[i][NUM_ATTRIBUTES] == 1)
+                    for (int k = 0; k < NUM_LABELS; k++)
                     {
-                        yesCount[j]++;
-                    }
-                    else
-                    {
-                        noCount[j]++;
+                        if (dataset[i][NUM_ATTRIBUTES] == labelCount[j][k])
+                        {
+                            labelCount[j][k]++;
+                        }
                     }
                 }
             }
         }
     }
     
-
+    float max[numValues[attribute]];
+    for (int i = 0; i < numValues[attribute]; i++)
+    {
+        max[i] = -1;
+    }
 
     for (int j = 0; j < numValues[attribute]; j++)
     {
@@ -615,13 +647,13 @@ float me_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
         }
         else
         {
-            if (yesCount[j] >= noCount[j])
+            for (int k = 0; k < NUM_LABELS; k++)
             {
-                me[j] = 1 - (yesCount[j]/valueCount[j]);
-            }
-            else
-            {
-                me[j] = 1 - (noCount[j]/valueCount[j]);
+                if (labelCount[j][k] > max[j])
+                {
+                    max[j] = labelCount[j][k];
+                }
+                me[j] = 1 - (max[j]/valueCount[j]);
             }
         }
         weightedme += valueCount[j]/totalCount*me[j];
@@ -630,7 +662,7 @@ float me_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, i
 }
 
 //Calculate gini on labels for current set of instances
-float gini_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
+float gini_initial(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances)
 {
     float totalCount = 0;
     float yesCount = 0;
@@ -651,7 +683,7 @@ float gini_initial(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstanc
 }
 
 //Calculate weighted gini gain for each attribute in current instance set
-float gini_gain(int subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
+float gini_gain(short subset[], int dataset[][NUM_ATTRIBUTES+1], int numInstances, int attribute)
 {
     float totalCount = 0;
     float valueCount[numValues[attribute]];
