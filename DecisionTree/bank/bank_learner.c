@@ -26,7 +26,6 @@ float gini_initial(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numI
 float gini_gain(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numInstances, short attribute);
 
 short countData(void);
-short convertData(void);
 short importData(short data[][NUM_ATTRIBUTES+1], short numInstances);
 short valueToInt(char* value, short attribute);
 short getMethod(void);
@@ -850,7 +849,7 @@ short valueToInt(char* value, short attribute)
             case 1:
                 if (!strcmp(value, "admin"))
                     return 0;
-                else if (!strcmp(value, "unkown"))
+                else if (!strcmp(value, "unknown"))
                     return 1;
                 else if (!strcmp(value, "unemployed"))
                     return 2;
@@ -1154,7 +1153,7 @@ void decodeValue(short attribute, short value)
                     printf("'admin'");
                     break;
                 case 1:
-                    printf("'unkown'");
+                    printf("'unknown'");
                     break;
                 case 2:
                     printf("'unemployed'");
@@ -1377,7 +1376,7 @@ void decodeValue(short attribute, short value)
             switch (value)
             {
                 case 0:
-                    printf("'unkown'");
+                    printf("'unknown'");
                     break;
                 case 1:
                     printf("'other'");

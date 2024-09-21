@@ -10,7 +10,7 @@ bool isNumeric[NUM_ATTRIBUTES] = {true, false, false, false, false, true, false,
 
 int countEntries(char fileName[]);
 int importData(char fileName[], int data[][NUM_ATTRIBUTES+1], int numInstances, int numAttributes);
-int importTree(char fileName[], int tree[][9], int numInstances, int numAttributes);
+int importTree(char fileName[], int tree[][17], int numInstances, int numAttributes);
 int valueToInt(char* value, int attribute);
 
 typedef struct
@@ -56,9 +56,9 @@ int main()
     {
         return 1;
     }
-    int tempTree[numBranches][9];
+    int tempTree[numBranches][17];
     Branch tree[numBranches];
-    importTree(userInput, tempTree, numBranches, 9);
+    importTree(userInput, tempTree, numBranches, 17);
     for (int i = 0; i < numBranches; i++)
     {
         tree[i].id = tempTree[i][0];
@@ -78,6 +78,7 @@ int main()
     //For each instance in dataset
     while (instanceIndex < numInstances)
     {   
+        printf("at: %d -- %d\n", instanceIndex, branchIndex);
         //If the current branch in the tree has a label, assign that label to that instance
         if (tree[branchIndex].label > -1)
         {
@@ -92,6 +93,7 @@ int main()
             {
                 if (data[instanceIndex][tree[branchIndex].attribute] == tree[tree[branchIndex].leaf[j]].value)
                 {
+                    printf("bi; %d, l: %d, j: %d\n", branchIndex, tree[branchIndex].leaf[j], j);
                     branchIndex = tree[branchIndex].leaf[j];
                     break;
                 }
@@ -194,7 +196,7 @@ int importData(char fileName[], int data[][NUM_ATTRIBUTES+1], int numInstances, 
     return 0;
 }
 
-int importTree(char fileName[], int tree[][9], int numInstances, int numAttributes)
+int importTree(char fileName[], int tree[][17], int numInstances, int numAttributes)
 {
     FILE *inputFile = fopen(fileName, "r");
     if (inputFile == NULL)
@@ -254,7 +256,7 @@ int valueToInt(char* value, int attribute)
             case 1:
                 if (!strcmp(value, "admin"))
                     return 0;
-                else if (!strcmp(value, "unkown"))
+                else if (!strcmp(value, "unknown"))
                     return 1;
                 else if (!strcmp(value, "unemployed"))
                     return 2;
