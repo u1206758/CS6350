@@ -3,8 +3,10 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define NUM_ATTRIBUTES 6
-#define MAX_VAL 4 
+#define NUM_ATTRIBUTES 16
+#define MAX_VAL 12 
+float thresholds[NUM_ATTRIBUTES] = {38, 0, 0, 0, 0, 452.5, 0, 0, 0, 16, 0, 180, 2, -1, 0, 0};
+bool isNumeric[NUM_ATTRIBUTES] = {true, false, false, false, false, true, false, false, false, true, false, true, true, true, true, false};
 
 int countEntries(char fileName[]);
 int importData(char fileName[], int data[][NUM_ATTRIBUTES+1], int numInstances, int numAttributes);
@@ -232,123 +234,136 @@ int importTree(char fileName[], int tree[][9], int numInstances, int numAttribut
 //Convert value strings from input dataset to integers
 int valueToInt(char* value, int attribute)
 {
-    //branchIndex, attribute, value, label, parent, MAX_VAL # of leaves
-    int dec;
-    if (attribute == -1)
+    if (isNumeric[attribute])
     {
-        return atoi(value);
-        if ((char )value[0] == '-')
+        if (atoi(value) >= thresholds[attribute])
         {
-            dec = -1 * ((char) value[1] - 48);
+            //yes >=
+            return 0;
         }
         else
         {
-            dec = (char) value[0] - 48;
+            //no <
+            return 1;
         }
-        return dec;
     }
-
-       /*
-        data[inst][0] - buying
-            vhigh - 0
-            high - 1
-            med - 2
-            low - 3
-        data[]inst[1] - maint
-            vhigh - 0
-            high - 1
-            med - 2
-            low - 3
-        data[inst][2] - doors
-            2 - 0
-            3 - 1
-            4 - 2
-            5more - 3
-        data[inst][3] - persons
-            2 - 0
-            4 - 1
-            more - 2
-        data[inst][4] - lug_boot
-            small - 0
-            med - 1
-            big - 2
-        data[inst][5] - safety
-            low - 0
-            med - 1
-            high - 2
-        data[inst][6] - label
-            unacc - 0
-            acc - 1
-            good - 2
-            vgood - 3
-    */
-
-   switch (attribute)
-   {
-        case 0:
-            if (!strcmp(value, "vhigh"))
-                return 0;
-            else if (!strcmp(value, "high"))
-                return 1;
-            else if (!strcmp(value, "med"))
-                return 2;
-            else if (!strcmp(value, "low"))
-                return 3;
-            break;
-        case 1:
-            if (!strcmp(value, "vhigh"))
-                return 0;
-            else if (!strcmp(value, "high"))
-                return 1;
-            else if (!strcmp(value, "med"))
-                return 2;
-            else if (!strcmp(value, "low"))
-                return 3;
-            break;
-        case 2:
-            if (!strcmp(value, "2"))
-                return 0;
-            else if (!strcmp(value, "3"))
-                return 1;
-            else if (!strcmp(value, "4"))
-                return 2;
-            else if (!strcmp(value, "5more"))
-                return 3;
-            break;
-        case 3:
-            if (!strcmp(value, "2"))
-                return 0;
-            else if (!strcmp(value, "4"))
-                return 1;
-            else if (!strcmp(value, "more"))
-                return 2;
-            break;
-        case 4:
-            if (!strcmp(value, "small"))
-                return 0;
-            else if (!strcmp(value, "med"))
-                return 1;
-            else if (!strcmp(value, "big"))
-                return 2;
-            break;
-        case 5:
-            if (!strcmp(value, "low"))
-                return 0;
-            else if (!strcmp(value, "med"))
-                return 1;
-            else if (!strcmp(value, "high"))
-                return 2;
-            break;
-        case 6:
-            if (!strcmp(value, "unacc"))
-                return 0;
-            else if (!strcmp(value, "acc"))
-                return 1;
-            else if (!strcmp(value, "good"))
-                return 2;
-            else if (!strcmp(value, "vgood"))
-                return 3;
-            break;
-   }
-   return -1;
+    else
+    {
+        switch (attribute)
+        {
+            case 1:
+                if (!strcmp(value, "admin"))
+                    return 0;
+                else if (!strcmp(value, "unkown"))
+                    return 1;
+                else if (!strcmp(value, "unemployed"))
+                    return 2;
+                else if (!strcmp(value, "management"))
+                    return 3;
+                else if (!strcmp(value, "housemaid"))
+                    return 4;
+                else if (!strcmp(value, "entrepreneur"))
+                    return 5;
+                else if (!strcmp(value, "student"))
+                    return 6;
+                else if (!strcmp(value, "blue-collar"))
+                    return 7;
+                else if (!strcmp(value, "self-employed"))
+                    return 8;
+                else if (!strcmp(value, "retired"))
+                    return 9;
+                else if (!strcmp(value, "technician"))
+                    return 10;
+                else if (!strcmp(value, "services"))
+                    return 11;
+                break;
+            case 2:
+                if (!strcmp(value, "married"))
+                    return 0;
+                else if (!strcmp(value, "divorced"))
+                    return 1;
+                else if (!strcmp(value, "single"))
+                    return 2;
+                break;
+            case 3:
+                if (!strcmp(value, "unknown"))
+                    return 0;
+                else if (!strcmp(value, "secondary"))
+                    return 1;
+                else if (!strcmp(value, "primary"))
+                    return 2;
+                else if (!strcmp(value, "tertiary"))
+                    return 3;
+                break;
+            case 4:
+                if (!strcmp(value, "yes"))
+                    return 0;
+                else if (!strcmp(value, "no"))
+                    return 1;
+                break;
+            case 6:
+                if (!strcmp(value, "yes"))
+                    return 0;
+                else if (!strcmp(value, "no"))
+                    return 1;
+                break;
+            case 7:
+                if (!strcmp(value, "yes"))
+                    return 0;
+                else if (!strcmp(value, "no"))
+                    return 1;
+                break;
+            case 9:
+                if (!strcmp(value, "unknown"))
+                    return 0;
+                else if (!strcmp(value, "telephone"))
+                    return 1;
+                else if (!strcmp(value, "cellular"))
+                    return 2;
+                break;
+            case 10:
+                if (!strcmp(value, "jan"))
+                    return 0;
+                else if (!strcmp(value, "feb"))
+                    return 1;
+                else if (!strcmp(value, "mar"))
+                    return 2;
+                if (!strcmp(value, "apr"))
+                    return 3;
+                else if (!strcmp(value, "may"))
+                    return 4;
+                else if (!strcmp(value, "jun"))
+                    return 5;
+                if (!strcmp(value, "jul"))
+                    return 6;
+                else if (!strcmp(value, "aug"))
+                    return 7;
+                else if (!strcmp(value, "sep"))
+                    return 8;
+                if (!strcmp(value, "oct"))
+                    return 9;
+                else if (!strcmp(value, "nov"))
+                    return 10;
+                else if (!strcmp(value, "dec"))
+                    return 11;
+                break;
+            case 15:
+                if (!strcmp(value, "unknown"))
+                    return 0;
+                else if (!strcmp(value, "other"))
+                    return 1;
+                else if (!strcmp(value, "failure"))
+                    return 2;
+                else if (!strcmp(value, "success"))
+                    return 3;
+                break;
+            case 16:
+                if (!strcmp(value, "yes"))
+                    return 0;
+                else if (!strcmp(value, "no"))
+                    return 1;
+                break;
+        }
+    }
+    return -1;
 }

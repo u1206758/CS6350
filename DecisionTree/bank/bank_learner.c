@@ -15,7 +15,7 @@ short numValues[NUM_ATTRIBUTES] = {2, 12, 3, 4, 2, 2, 2, 2, 3, 2, 12, 2, 2, 2, 2
 float thresholds[NUM_ATTRIBUTES] = {38, 0, 0, 0, 0, 452.5, 0, 0, 0, 16, 0, 180, 2, -1, 0, 0};
 bool isNumeric[NUM_ATTRIBUTES] = {true, false, false, false, false, true, false, false, false, true, false, true, true, true, true, false};
 #define MAX_VAL 12 
-#define MAX_BRANCH 800
+#define MAX_BRANCH 5000
 
 short splitLeaf(short currentInstances[NUM_I], short data[][NUM_ATTRIBUTES+1], short numInstances, short method, bool parentAttribute[NUM_ATTRIBUTES], short branchIndex);
 float ig_initial(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numInstances);
@@ -81,7 +81,8 @@ int main()
         tree[i].label = -1;
     }
     //Initialize head of tree
-    short currentInstances[maxBranches][numInstances];
+    //short currentInstances[maxBranches][numInstances];
+    short (*currentInstances)[numInstances] = malloc(sizeof(*currentInstances) * maxBranches);
 
     for (short i = 0; i < maxBranches; i++)
     {
@@ -997,25 +998,26 @@ short getMethod(void)
 
 short getMaxDepth(void)
 {
-    char userInput;
+    char userInput[50];
     bool userInputValid;
     short depth;
 
     do
     {
-        printf("Select maximum tree depth (1-6)\n\n");
-        scanf(" %c", &userInput);
+        printf("Select maximum tree depth (1-16)\n\n");
+        scanf(" %s", userInput);
         printf("\n");
-        if (userInput >= '1' && userInput <= '6')
-        {
+        //if (userInput >= '1' && userInput <= '6')
+        //{
             userInputValid = true;
-            depth = userInput-48;
-        }
-        else
-        {
-            printf("Invalid selection\n\n");
-            userInputValid = false;
-        }
+            depth = atoi(userInput);
+            printf("depth: %d\n", depth);
+        //}
+        //else
+        //{
+        //    printf("Invalid selection\n\n");
+        //    userInputValid = false;
+        //}
     } while (!userInputValid);
     return depth;
 }
