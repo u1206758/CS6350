@@ -1,2 +1,6 @@
 .DS_Store
 DecisionTree/*.out
+DecisionTree/car/*.out
+DecisionTree/bank/*.out
+EnsembleLearning/*.out
+LinearRegression/*.out
