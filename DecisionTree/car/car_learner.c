@@ -288,7 +288,7 @@ int main()
                 //Check if leaves exist on this branch
                 for (int i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                 {
-                    if (tree[branchIndex].leaf[i != -1])
+                    if (tree[branchIndex].leaf[i] != -1)
                         {
                             hasLeaves = true;
                             break;

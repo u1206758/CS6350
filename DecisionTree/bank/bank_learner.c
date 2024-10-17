@@ -15,7 +15,7 @@ short numValues[NUM_ATTRIBUTES] = {2, 12, 3, 4, 2, 2, 2, 2, 3, 2, 12, 2, 2, 2, 2
 float thresholds[NUM_ATTRIBUTES] = {38, 0, 0, 0, 0, 452.5, 0, 0, 0, 16, 0, 180, 2, -1, 0, 0};
 bool isNumeric[NUM_ATTRIBUTES] = {true, false, false, false, false, true, false, false, false, true, false, true, true, true, true, false};
 #define MAX_VAL 12 
-#define MAX_BRANCH 5000
+#define MAX_BRANCH 6000
 
 short splitLeaf(short currentInstances[NUM_I], short data[][NUM_ATTRIBUTES+1], short numInstances, short method, bool parentAttribute[NUM_ATTRIBUTES], short branchIndex);
 float ig_initial(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numInstances);
@@ -39,7 +39,7 @@ typedef struct
     short leaf[MAX_VAL];    //The IDs of the leaves of this branch
     short attribute;  //The attribute this branch is split on (if any)
     short value;      //The value a leaf represents when split from parent branch
-    short label;      //The label for this branch (-1 no label, -2 all children labelled)
+    short label;      //The label for this branch (-99 no label, -2 all children labelled)
 }Branch;
 
 void printTree(Branch tree[], short maxBranches);
@@ -54,7 +54,7 @@ int main()
 {
     //Import data from CSV
     short numInstances = countData();
-    if (numInstances == -1)
+    if (numInstances == -99)
     {
         return 1;
     }
@@ -71,13 +71,13 @@ int main()
     for (short i = 0; i < maxBranches; i++)
     {
         tree[i].active = false;
-        tree[i].level = -1;
-        tree[i].parent = -1;
+        tree[i].level = -99;
+        tree[i].parent = -99;
         for (short j = 0; j < MAX_VAL; j++)
-            tree[i].leaf[j] = -1;
-        tree[i].attribute = -1;
-        tree[i].value = -1;
-        tree[i].label = -1;
+            tree[i].leaf[j] = -99;
+        tree[i].attribute = -99;
+        tree[i].value = -99;
+        tree[i].label = -99;
     }
     //Initialize head of tree
     //short currentInstances[maxBranches][numInstances];
@@ -93,7 +93,7 @@ int main()
             }
             else
             {
-                currentInstances[i][j] = -1;
+                currentInstances[i][j] = -99;
             }
         }
     }
@@ -102,7 +102,8 @@ int main()
     tree[0].level = 1;
     while(!allDone)
     {
-        short lastLabel = -1;
+       // printf("BI: %d, d: %d, a: %d\n", branchIndex, tree[branchIndex].level, tree[tree[branchIndex].parent].attribute);
+        short lastLabel = -99;
         bool readyToLabel = true;
         bool allLeavesLabelled = true;
         bool hasLeaves = false;
@@ -112,13 +113,13 @@ int main()
             labelCount[i] = 0;
         }
         short maxLabelCount = 0;
-        short maxLabel = -1;
+        short maxLabel = -99;
         bool parentAttribute[NUM_ATTRIBUTES];
         short parentValue[NUM_ATTRIBUTES];
         for (short i = 0; i < NUM_ATTRIBUTES; i++)
         {
             parentAttribute[i] = false;
-            parentValue[i] = -1;
+            parentValue[i] = -99;
         }
 
         //If current branch/leaf is at max level
@@ -147,7 +148,7 @@ int main()
                 }
             }
             //If branch value has no instances
-            if (maxLabel == -1)
+            if (maxLabel == -99)
             {
                 for (short i = 0; i < NUM_LABELS; i++)
                 {
@@ -184,7 +185,7 @@ int main()
             for (short j = 0; j < numValues[tree[tree[branchIndex].parent].attribute]; j++)
             {
                 //If not, set flag false
-                if (tree[tree[tree[branchIndex].parent].leaf[j]].label == -1)
+                if (tree[tree[tree[branchIndex].parent].leaf[j]].label == -99)
                 {
                     allLeavesLabelled = false;
                     break;
@@ -205,10 +206,10 @@ int main()
             for (short i = 0; i < numInstances; i++)
             {   
                 //If current instance is in current set
-                if (currentInstances[branchIndex][i] != -1)
+                if (currentInstances[branchIndex][i] != -99)
                 {
                     //Check if all labels are the same
-                    if (lastLabel == -1)
+                    if (lastLabel == -99)
                     {
                         lastLabel = data[i][NUM_ATTRIBUTES];
                     }
@@ -231,7 +232,7 @@ int main()
             {
                 //Label branch
                 //If branch value has no instances
-                if (lastLabel == -1)
+                if (lastLabel == -99)
                 {
                     //find most common label for current value
                     for (short i = 0; i < numInstances; i++)
@@ -273,7 +274,7 @@ int main()
                 for (short j = 0; j < numValues[tree[branchIndex].attribute]; j++)
                 {
                     //If not, set index to next unlabelled leaf
-                    if (tree[tree[branchIndex].leaf[j]].label == -1)
+                    if (tree[tree[branchIndex].leaf[j]].label == -99)
                     {
                         allLeavesLabelled = false;
                         branchIndex = tree[branchIndex].leaf[j];
@@ -292,7 +293,7 @@ int main()
                 //Check if leaves exist on this branch
                 for (short i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                 {
-                    if (tree[branchIndex].leaf[i != -1])
+                    if (tree[branchIndex].leaf[i] != -99)
                         {
                             hasLeaves = true;
                             break;
@@ -304,7 +305,7 @@ int main()
                     for (short i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                     {
                         //if all are not labelled, set index to next unlabeleld
-                        if (tree[tree[branchIndex].leaf[i]].label == -1)
+                        if (tree[tree[branchIndex].leaf[i]].label == -99)
                         {
                             allLeavesLabelled = false;
                             branchIndex = tree[branchIndex].leaf[i];
@@ -329,7 +330,7 @@ int main()
                 {
                     //Find all attributes already split in the current path
                     short tempIndex = branchIndex;
-                    while (tempIndex > -1)
+                    while (tempIndex > -99)
                     {
                         if (tempIndex > 0)
                         {
@@ -344,7 +345,7 @@ int main()
                     for (short i = 0; i < numValues[tree[branchIndex].attribute]; i++)
                     {
                         tree[branchIndex].leaf[i] = getNextID(tree, maxBranches);
-                        if (tree[branchIndex].leaf[i] == -1)
+                        if (tree[branchIndex].leaf[i] == -99)
                         {
                             printf("ERROR: out of branches!\n");
                             printf("%d\n", branchIndex);
@@ -358,13 +359,13 @@ int main()
                         for (short j = 0; j < numInstances; j++)
                         {
                             //if the instance value mathing the leaf value for the parent attribute is also present in parent subset
-                            if (data[j][tree[branchIndex].attribute] == i && currentInstances[branchIndex][j] != -1)
+                            if (data[j][tree[branchIndex].attribute] == i && currentInstances[branchIndex][j] != -99)
                             {
                                 currentInstances[tree[branchIndex].leaf[i]][j] = j;
                             }
                             else
                             {
-                                currentInstances[tree[branchIndex].leaf[i]][j] = -1;
+                                currentInstances[tree[branchIndex].leaf[i]][j] = -99;
                             }
                         }
                     }
@@ -391,8 +392,8 @@ short splitLeaf(short currentInstances[NUM_I], short data[][NUM_ATTRIBUTES+1], s
     //Main algorithm loop
     float initialInformation;
     float attributeGain[NUM_ATTRIBUTES];
-    float bestGain = -1;
-    short bestAttribute = -1;
+    float bestGain = -99;
+    short bestAttribute = -99;
     
     //Calculate initial label information
     switch (method)
@@ -461,7 +462,7 @@ float ig_initial(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numIns
 
     for (short i = 0; i < numInstances; i++)
     {
-        if (subset[i] != -1)
+        if (subset[i] != -99)
         {
             totalCount++;
             for (short j = 0; j < NUM_LABELS; j++)
@@ -508,7 +509,7 @@ float ig_gain(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numInstan
     //for each instance that is in the current subset
     for (short i = 0; i < numInstances; i++)
     {
-        if (subset[i] != -1)
+        if (subset[i] != -99)
         {
             //count values for each attribute and their label
             for (short j = 0; j < numValues[attribute]; j++)
@@ -560,7 +561,7 @@ float me_initial(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numIns
     }
     for (short i = 0; i < numInstances; i++)
     {
-        if (subset[i] != -1)
+        if (subset[i] != -99)
         {
             totalCount++;
             for (short j = 0; j < NUM_LABELS; j++)
@@ -573,7 +574,7 @@ float me_initial(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numIns
         }
     }
 
-    float max = -1;
+    float max = -99;
 
     for (short j = 0; j < NUM_LABELS; j++)
     {
@@ -608,7 +609,7 @@ float me_gain(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numInstan
     //for each instance that is in the current subset
     for (short i = 0; i < numInstances; i++)
     {
-        if (subset[i] != -1)
+        if (subset[i] != -99)
         {
             //count values for each attribute and their label
             for (short j = 0; j < numValues[attribute]; j++)
@@ -632,7 +633,7 @@ float me_gain(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numInstan
     float max[numValues[attribute]];
     for (short i = 0; i < numValues[attribute]; i++)
     {
-        max[i] = -1;
+        max[i] = -99;
     }
 
     for (short j = 0; j < numValues[attribute]; j++)
@@ -669,7 +670,7 @@ float gini_initial(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numI
     }
     for (short i = 0; i < numInstances; i++)
     {
-        if (subset[i] != -1)
+        if (subset[i] != -99)
         {
             totalCount++;
             for (short j = 0; j < NUM_LABELS; j++)
@@ -715,7 +716,7 @@ float gini_gain(short subset[], short dataset[][NUM_ATTRIBUTES+1], short numInst
     //for each instance that is in the current subset
     for (short i = 0; i < numInstances; i++)
     {
-        if (subset[i] != -1)
+        if (subset[i] != -99)
         {
             //count values for each attribute and their label
             for (short j = 0; j < numValues[attribute]; j++)
@@ -767,7 +768,7 @@ short countData(void)
     if (inputFile == NULL)
     {
         printf("Error opening file");
-        return -1;
+        return -99;
     }
 
     char row[100];
@@ -795,7 +796,7 @@ short importData(short data[][NUM_ATTRIBUTES+1], short numInstances)
     if (inputFile == NULL)
     {
         printf("Error opening file");
-        return -1;
+        return -99;
     }
 
     char row[100];
@@ -960,7 +961,7 @@ short valueToInt(char* value, short attribute)
                 break;
         }
     }
-    return -1;
+    return -99;
 }
 
 short getMethod(void)
@@ -1006,17 +1007,16 @@ short getMaxDepth(void)
         printf("Select maximum tree depth (1-16)\n\n");
         scanf(" %s", userInput);
         printf("\n");
-        //if (userInput >= '1' && userInput <= '6')
-        //{
+        if (atoi(userInput) >= 1 && atoi(userInput) <= 120)
+        {
             userInputValid = true;
             depth = atoi(userInput);
-            printf("depth: %d\n", depth);
-        //}
-        //else
-        //{
-        //    printf("Invalid selection\n\n");
-        //    userInputValid = false;
-        //}
+        }
+        else
+        {
+            printf("Invalid selection\n\n");
+            userInputValid = false;
+        }
     } while (!userInputValid);
     return depth;
 }
@@ -1028,7 +1028,7 @@ short getNextID(Branch tree[], short maxBranches)
         if (tree[i].active == false)
             return i;
     }
-    return -1;
+    return -99;
 }
 
 void printTree(Branch tree[], short maxBranches)
