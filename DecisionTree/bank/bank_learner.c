@@ -1007,7 +1007,7 @@ short getMaxDepth(void)
         printf("Select maximum tree depth (1-16)\n\n");
         scanf(" %s", userInput);
         printf("\n");
-        if (atoi(userInput) >= 1 && atoi(userInput) <= 120)
+        if (atoi(userInput) >= 1 && atoi(userInput) <= 16)
         {
             userInputValid = true;
             depth = atoi(userInput);
