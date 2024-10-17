@@ -1,4 +1,4 @@
-# Homework 2 - Decision Tree Practice
+# Homework 1 - Decision Tree Practice
 #### run.sh
 Compiles and runs the decision tree learning algorithm followed by the prediction algorithm.
 ##
