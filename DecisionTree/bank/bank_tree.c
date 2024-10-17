@@ -78,7 +78,6 @@ int main()
     //For each instance in dataset
     while (instanceIndex < numInstances)
     {   
-        printf("at: %d -- %d\n", instanceIndex, branchIndex);
         //If the current branch in the tree has a label, assign that label to that instance
         if (tree[branchIndex].label > -1)
         {
@@ -93,7 +92,6 @@ int main()
             {
                 if (data[instanceIndex][tree[branchIndex].attribute] == tree[tree[branchIndex].leaf[j]].value)
                 {
-                    printf("bi; %d, l: %d, j: %d\n", branchIndex, tree[branchIndex].leaf[j], j);
                     branchIndex = tree[branchIndex].leaf[j];
                     break;
                 }
@@ -223,7 +221,7 @@ int importTree(char fileName[], int tree[][17], int numInstances, int numAttribu
                 token = strtok(row, ",");
                 for (int j = 0; j < numAttributes; j++)
                 {
-                    tree[i][j] = valueToInt(token, -1);
+                    tree[i][j] = valueToInt(token, -2);
                     token = strtok(NULL, ",\r\n");
                 }
             }
@@ -236,7 +234,11 @@ int importTree(char fileName[], int tree[][17], int numInstances, int numAttribu
 //Convert value strings from input dataset to integers
 int valueToInt(char* value, int attribute)
 {
-    if (isNumeric[attribute])
+    if (attribute == -2)
+    {
+        return atoi(value);
+    }
+    else if (isNumeric[attribute])
     {
         if (atoi(value) >= thresholds[attribute])
         {
