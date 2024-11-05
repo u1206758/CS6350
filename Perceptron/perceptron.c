@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <sys/time.h>
 
 #define NUM_TRAINING_INSTANCES 872   //872 instances in the training set
 #define NUM_TESTING_INSTANCES 500   //500 instances in the test set
@@ -12,6 +13,7 @@
 
 int import_training_data(float data[][NUM_ATTRIBUTES+1]);
 int import_testing_data(float data[][NUM_ATTRIBUTES+1]);
+void shuffle_data(float data[NUM_TRAINING_INSTANCES][NUM_ATTRIBUTES+1]);
 
 int main()
 {
@@ -26,7 +28,8 @@ int main()
     //Perceptron linear equation learner
     for (int epoch = 0; epoch < 10; epoch++)
     {
-        int updates = 0;
+        shuffle_data(training_data);
+
         for (int i = 0; i < NUM_TRAINING_INSTANCES; i++)
         {
             //Calculate prediction with current linear function
@@ -40,7 +43,6 @@ int main()
                     w[j] += training_data[i][4] * training_data[i][j];
                 }
                 b += training_data[i][4];
-                updates++;
             }
         }
     }
@@ -74,7 +76,7 @@ int main()
 
     printf("\nPredicting complete\n");
     printf("\n%d incorrect predictions on %d instances\n", errors, NUM_TESTING_INSTANCES);
-    printf("prediction error: %.2f%% \n\n", ((float) errors / (float) NUM_TESTING_INSTANCES)*100);
+    printf("Prediction error: %.2f%% \n\n", ((float) errors / (float) NUM_TESTING_INSTANCES)*100);
 
     return 0;
 }
@@ -159,3 +161,23 @@ int import_testing_data(float data[][NUM_ATTRIBUTES+1])
     return 0;
 }
 
+//Fisher-Yates shuffling
+void shuffle_data(float data[NUM_TRAINING_INSTANCES][NUM_ATTRIBUTES+1])
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    int usec = tv.tv_usec;
+    srand48(usec);
+
+    size_t i;
+    for (i = NUM_TRAINING_INSTANCES - 1; i > 0; i--) {
+        float temp[NUM_ATTRIBUTES+1];
+        size_t j = (unsigned int) (drand48()*(i+1));
+        for (int k = 0; k < NUM_ATTRIBUTES+1; k++)
+        {
+            temp[k] = data[j][k];
+            data[j][k] = data[i][k];
+            data[i][k] = temp[k];
+        }
+    }
+}
