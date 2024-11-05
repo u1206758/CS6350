@@ -4,3 +4,4 @@ DecisionTree/car/*.out
 DecisionTree/bank/*.out
 EnsembleLearning/*.out
 LinearRegression/*.out
+Perceptron/*.out
