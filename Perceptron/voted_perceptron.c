@@ -6,6 +6,7 @@
 #include <sys/time.h>
 
 #define EPOCHS 10   //Number of epochs to repeat perceptron algorithm each run
+#define MAX_VECTORS 500 //Size of weights array
 
 #define NUM_TRAINING_INSTANCES 872   //872 instances in the training set
 #define NUM_TESTING_INSTANCES 500   //500 instances in the test set
@@ -16,6 +17,7 @@
 int import_training_data(float data[][NUM_ATTRIBUTES+1]);
 int import_testing_data(float data[][NUM_ATTRIBUTES+1]);
 void shuffle_data(float data[NUM_TRAINING_INSTANCES][NUM_ATTRIBUTES+1]);
+void export_vectors(float w[4][MAX_VECTORS], float b[MAX_VECTORS], int count[MAX_VECTORS], int vectorIndex);
 
 int main()
 {
@@ -30,8 +32,20 @@ int main()
     if (import_testing_data(testing_data) == -99)
         return 1;
 
-    float w[4] = {0, 0, 0, 0};
-    float b = 0;
+    float w[4][MAX_VECTORS];
+    float b[MAX_VECTORS];
+    int count[MAX_VECTORS];
+    for (int i = 0; i < MAX_VECTORS; i++)
+    {
+        w[0][i] = 0;
+        w[1][i] = 0;
+        w[2][i] = 0;
+        w[3][i] = 0;
+        b[i] = 0;
+        count[i] = 1;
+    }
+    int vectorIndex = 0;
+    float prediction = 0;
 
     for (int epoch = 0; epoch < EPOCHS; epoch++)
     {
@@ -39,34 +53,57 @@ int main()
         for (int i = 0; i < NUM_TRAINING_INSTANCES; i++)
         {
             //Calculate prediction with current linear function
-            float prediction = w[0]*training_data[i][0]+w[1]*training_data[i][1]+w[2]*training_data[i][2]+w[3]*training_data[i][3]+b;
+            prediction = w[0][vectorIndex]*training_data[i][0]+w[1][vectorIndex]*training_data[i][1]+w[2][vectorIndex]*training_data[i][2]+w[3][vectorIndex]*training_data[i][3]+b[vectorIndex];
             //Compare prediction to actual label
             if ((prediction <= 0 && training_data[i][4] == 1) || (prediction > 0 && training_data[i][4] == -1))
             {
                 //Update function if necessary
+                vectorIndex++;
                 for (int j = 0; j < NUM_ATTRIBUTES; j++)
                 {
-                    w[j] += training_data[i][4] * training_data[i][j];
+                    w[j][vectorIndex] = w[j][vectorIndex-1] + training_data[i][4] * training_data[i][j];
                 }
-                b += training_data[i][4];
+                b[vectorIndex] = b[vectorIndex-1] + training_data[i][4];
+            }
+            else
+            {
+                count[vectorIndex]++;
             }
         }
     }
 
     printf("\nLearning complete\n\n");
-    printf("w[0]: %f\n", w[0]);
-    printf("w[1]: %f\n", w[1]);
-    printf("w[2]: %f\n", w[2]);
-    printf("w[3]: %f\n", w[3]);
-    printf("b: %f\n", b);
-
+    for (int i = 0; i < vectorIndex+1; i++)
+    {
+        printf("%d: w=[%f %f %f %f], b=%f, count=%d\n",i,w[0][i],w[1][i],w[2][i],w[3][i],b[i],count[i]);
+    }
+    
     int errors = 0;
+    float midPrediction[MAX_VECTORS];
+
+    for (int i = 0; i < MAX_VECTORS; i++)
+    {
+        midPrediction[i] = 0;
+    }
 
     //Make predictions on testing data using learned function
     for (int i = 0; i < NUM_TESTING_INSTANCES; i++)
     {
+        prediction = 0;
         //Calculate prediction with current linear function
-        float prediction = w[0]*testing_data[i][0]+w[1]*testing_data[i][1]+w[2]*testing_data[i][2]+w[3]*testing_data[i][3]+b;
+        for (int j = 0; j < vectorIndex+1; j++)
+        {
+            midPrediction[j] = w[0][j]*testing_data[i][0]+w[1][j]*testing_data[i][1]+w[2][j]*testing_data[i][2]+w[3][j]*testing_data[i][3]+b[j];
+            if (midPrediction[j] <= 0)
+            {
+                midPrediction[j] = -1;
+            }
+            else
+            {
+                midPrediction[j] = 1;
+            }
+            prediction += midPrediction[j] * count[j];
+        }
         //Compare prediction to actual label
         if ((prediction <= 0 && testing_data[i][4] == 1) || (prediction > 0 && testing_data[i][4] == -1))
         {
@@ -77,6 +114,8 @@ int main()
     printf("\nPredicting complete\n");
     printf("\n%d incorrect predictions on %d instances\n", errors, NUM_TESTING_INSTANCES);
     printf("Prediction error: %.2f%% \n\n", ((float) errors / (float) NUM_TESTING_INSTANCES)*100);
+
+    export_vectors(w, b, count, vectorIndex);
 
     return 0;
 }
@@ -180,4 +219,24 @@ void shuffle_data(float data[NUM_TRAINING_INSTANCES][NUM_ATTRIBUTES+1])
             data[i][k] = temp[k];
         }
     }
+}
+
+void export_vectors(float w[4][MAX_VECTORS], float b[MAX_VECTORS], int count[MAX_VECTORS], int vectorIndex)
+{
+    FILE *outputFile = fopen("voted_perceptron_vectors.csv", "w");
+    if (outputFile == NULL)
+    {
+        printf("Error opening file");
+        return;
+    }
+
+    fprintf(outputFile, "w[0],w[1],w[2],w[3],b,count\n");
+    for (int i = 0; i < vectorIndex+1 ; i++)
+    {
+        fprintf(outputFile, "%f,%f,%f,%f,%f,%d", w[0][i], w[1][i], w[2][i], w[3][i], b[i], count[i]);
+        fprintf(outputFile, "\n");
+    }
+
+    fclose(outputFile);
+    return;
 }
