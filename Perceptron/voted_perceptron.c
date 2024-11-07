@@ -5,7 +5,6 @@
 #include <math.h>
 #include <sys/time.h>
 
-#define RUNS 100    //Number of times to run algorithm to collect averages for weights and prediction error
 #define EPOCHS 10   //Number of epochs to repeat perceptron algorithm each run
 
 #define NUM_TRAINING_INSTANCES 872   //872 instances in the training set
@@ -20,10 +19,6 @@ void shuffle_data(float data[NUM_TRAINING_INSTANCES][NUM_ATTRIBUTES+1]);
 
 int main()
 {
-    float wAvg[4] = {0, 0, 0, 0};
-    float bAvg = 0;
-    float errorAvg = 0;
-
     float training_data[NUM_TRAINING_INSTANCES][NUM_ATTRIBUTES+1];
     float testing_data[NUM_TESTING_INSTANCES][NUM_ATTRIBUTES+1];
 
@@ -35,50 +30,43 @@ int main()
     if (import_testing_data(testing_data) == -99)
         return 1;
 
-    //Perceptron linear equation learner
-    for (int run = 0; run < RUNS; run++)
+    float w[4] = {0, 0, 0, 0};
+    float b = 0;
+
+    for (int epoch = 0; epoch < EPOCHS; epoch++)
     {
-        float w[4] = {0, 0, 0, 0};
-        float b = 0;
-
-        for (int epoch = 0; epoch < EPOCHS; epoch++)
+        shuffle_data(training_data);
+        for (int i = 0; i < NUM_TRAINING_INSTANCES; i++)
         {
-            shuffle_data(training_data);
-
-            for (int i = 0; i < NUM_TRAINING_INSTANCES; i++)
+            //Calculate prediction with current linear function
+            float prediction = w[0]*training_data[i][0]+w[1]*training_data[i][1]+w[2]*training_data[i][2]+w[3]*training_data[i][3]+b;
+            //Compare prediction to actual label
+            if ((prediction <= 0 && training_data[i][4] == 1) || (prediction > 0 && training_data[i][4] == -1))
             {
-                //Calculate prediction with current linear function
-                float prediction = w[0]*training_data[i][0]+w[1]*training_data[i][1]+w[2]*training_data[i][2]+w[3]*training_data[i][3]+b;
-                //Compare prediction to actual label
-                if ((prediction <= 0 && training_data[i][4] == 1) || (prediction > 0 && training_data[i][4] == -1))
+                //Update function if necessary
+                for (int j = 0; j < NUM_ATTRIBUTES; j++)
                 {
-                    //Update function if necessary
-                    for (int j = 0; j < NUM_ATTRIBUTES; j++)
-                    {
-                        w[j] += training_data[i][4] * training_data[i][j];
-                    }
-                    b += training_data[i][4];
+                    w[j] += training_data[i][4] * training_data[i][j];
                 }
+                b += training_data[i][4];
             }
         }
+    }
 
-    /*
     printf("\nLearning complete\n\n");
     printf("w[0]: %f\n", w[0]);
     printf("w[1]: %f\n", w[1]);
     printf("w[2]: %f\n", w[2]);
     printf("w[3]: %f\n", w[3]);
     printf("b: %f\n", b);
-    */
 
-    float errors = 0;
+    int errors = 0;
 
     //Make predictions on testing data using learned function
     for (int i = 0; i < NUM_TESTING_INSTANCES; i++)
     {
         //Calculate prediction with current linear function
         float prediction = w[0]*testing_data[i][0]+w[1]*testing_data[i][1]+w[2]*testing_data[i][2]+w[3]*testing_data[i][3]+b;
-        //printf("%f   %f\n", prediction, testing_data[i][4]);
         //Compare prediction to actual label
         if ((prediction <= 0 && testing_data[i][4] == 1) || (prediction > 0 && testing_data[i][4] == -1))
         {
@@ -86,33 +74,9 @@ int main()
         }
     }
 
-    /*
     printf("\nPredicting complete\n");
     printf("\n%d incorrect predictions on %d instances\n", errors, NUM_TESTING_INSTANCES);
     printf("Prediction error: %.2f%% \n\n", ((float) errors / (float) NUM_TESTING_INSTANCES)*100);
-    */
-    wAvg[0] += w[0];
-    wAvg[1] += w[1];
-    wAvg[2] += w[2];
-    wAvg[3] += w[3];
-    bAvg += b;
-    errorAvg += (errors / (float) NUM_TESTING_INSTANCES)*100;
-    }
-
-    wAvg[0] /= RUNS;
-    wAvg[1] /= RUNS;
-    wAvg[2] /= RUNS;
-    wAvg[3] /= RUNS;
-    bAvg /= RUNS;
-    errorAvg /= RUNS;
-
-    printf("\nAverages over %d runs:\n", RUNS);
-    printf("w[0]: %f\n", wAvg[0]);
-    printf("w[1]: %f\n", wAvg[1]);
-    printf("w[2]: %f\n", wAvg[2]);
-    printf("w[3]: %f\n", wAvg[3]);
-    printf("b: %f\n", bAvg);
-    printf("errror: %.2f%%\n", errorAvg);
 
     return 0;
 }
